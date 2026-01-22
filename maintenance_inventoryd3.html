@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<input type="file" id="csvFile" accept=".csv" />
+<button onclick="loadCSV()">Charger CSV</button>
+
+<script>
+function loadCSV() {
+  const input = document.getElementById('csvFile');
+  if (!input.files[0]) {
+    alert("Sélectionne un fichier CSV !");
+    return;
+  }
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    displayCSV(text); // fonction pour remplir le tableau HTML
+  };
+  reader.readAsText(file);
+}
+
+function displayCSV(csvText) {
+  const rows = csvText.split("\n");
+  const table = document.getElementById("inventaireTable");
+  table.innerHTML = ""; // vide le tableau existant
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    row.split(",").forEach(cell => {
+      const td = document.createElement("td");
+      td.textContent = cell;
+      td.contentEditable = true; // rend la cellule modifiable
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Consommables Maintenance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            padding: 25px;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 25px;
+            background: #edf2f7;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            padding: 25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: #2d3748;
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-cvc { background: #bee3f8; color: #2c5282; }
+        .badge-elec { background: #feebc8; color: #c05621; }
+        .badge-plomb { background: #c6f6d5; color: #22543d; }
+        .badge-serrure { background: #fbb6ce; color: #702459; }
+        .badge-peinture { background: #d6bcfa; color: #44337a; }
+        .badge-menuiserie { background: #fed7d7; color: #742a2a; }
+        .badge-epi { background: #fef5e7; color: #7d6608; }
+        .badge-divers { background: #e2e8f0; color: #2d3748; }
+
+        .stock-low { color: #f56565; font-weight: bold; }
+        .stock-medium { color: #ed8936; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+
+        .quantity-input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-remove {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-small:hover {
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .close:hover {
+            color: #2d3748;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Inventaire Consommables Maintenance Tertiaire</h1>
+            <p>Gestion en temps réel des stocks multi-métiers</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label>Corps de métier:</label>
+                <select id="filterMetier">
+                    <option value="all">Tous</option>
+                    <option value="CVC">CVC</option>
+                    <option value="Électricité">Électricité</option>
+                    <option value="Plomberie">Plomberie</option>
+                    <option value="Serrurerie">Serrurerie</option>
+                    <option value="Peinture">Peinture</option>
+                    <option value="Menuiserie">Menuiserie</option>
+                    <option value="EPI">EPI</option>
+                    <option value="Divers">Divers</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Recherche:</label>
+                <input type="text" id="searchInput" placeholder="Rechercher un article...">
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ Ajouter Article</button>
+            <button class="btn btn-success" onclick="exportData()">📊 Exporter</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalItems">0</div>
+                <div class="stat-label">Articles Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lowStock">0</div>
+                <div class="stat-label">Stock Faible</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="metierCount">8</div>
+                <div class="stat-label">Corps de Métier</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Désignation</th>
+                        <th>Corps de Métier</th>
+                        <th>Stock Actuel</th>
+                        <th>Stock Min</th>
+                        <th>Unité</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ajouter un Article</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="addItemForm">
+                <div class="form-group">
+                    <label>Référence:</label>
+                    <input type="text" id="ref" required>
+                </div>
+                <div class="form-group">
+                    <label>Désignation:</label>
+                    <input type="text" id="designation" required>
+                </div>
+                <div class="form-group">
+                    <label>Corps de Métier:</label>
+                    <select id="metier" required>
+                        <option value="CVC">CVC</option>
+                        <option value="Électricité">Électricité</option>
+                        <option value="Plomberie">Plomberie</option>
+                        <option value="Serrurerie">Serrurerie</option>
+                        <option value="Peinture">Peinture</option>
+                        <option value="Menuiserie">Menuiserie</option>
+                        <option value="EPI">EPI</option>
+                        <option value="Divers">Divers</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Stock Actuel:</label>
+                    <input type="number" id="stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Stock Minimum:</label>
+                    <input type="number" id="stockMin" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Unité:</label>
+                    <select id="unit" required>
+                        <option value="pcs">Pièce(s)</option>
+                        <option value="m">Mètre(s)</option>
+                        <option value="L">Litre(s)</option>
+                        <option value="kg">Kilogramme(s)</option>
+                        <option value="boîte">Boîte(s)</option>
+                        <option value="rouleau">Rouleau(x)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let inventory = [
+            {ref: 'CVC001', designation: 'Filtre G4 600x600', metier: 'CVC', stock: 25, stockMin: 10, unit: 'pcs'},
+            {ref: 'CVC002', designation: 'Courroie trapézoïdale A50', metier: 'CVC', stock: 8, stockMin: 5, unit: 'pcs'},
+            {ref: 'CVC003', designation: 'Gaz R410A bouteille 10kg', metier: 'CVC', stock: 3, stockMin: 2, unit: 'pcs'},
+            {ref: 'ELEC001', designation: 'Disjoncteur 16A', metier: 'Électricité', stock: 45, stockMin: 20, unit: 'pcs'},
+            {ref: 'ELEC002', designation: 'Câble H07VK 2.5mm² rouge', metier: 'Électricité', stock: 120, stockMin: 50, unit: 'm'},
+            {ref: 'ELEC003', designation: 'Tube néon LED 120cm', metier: 'Électricité', stock: 18, stockMin: 15, unit: 'pcs'},
+            {ref: 'PLOMB001', designation: 'Joint fibre DN50', metier: 'Plomberie', stock: 35, stockMin: 20, unit: 'pcs'},
+            {ref: 'PLOMB002', designation: 'Cartouche thermostatique', metier: 'Plomberie', stock: 7, stockMin: 8, unit: 'pcs'},
+            {ref: 'PLOMB003', designation: 'Tube PER Ø16 couronne 50m', metier: 'Plomberie', stock: 4, stockMin: 3, unit: 'pcs'},
+            {ref: 'SERR001', designation: 'Cylindre européen 30x30', metier: 'Serrurerie', stock: 12, stockMin: 8, unit: 'pcs'},
+            {ref: 'SERR002', designation: 'Ferme-porte hydraulique', metier: 'Serrurerie', stock: 5, stockMin: 3, unit: 'pcs'},
+            {ref: 'PEIN001', designation: 'Peinture acrylique blanc 10L', metier: 'Peinture', stock: 15, stockMin: 10, unit: 'pcs'},
+            {ref: 'PEIN002', designation: 'Rouleau laqueur 180mm', metier: 'Peinture', stock: 22, stockMin: 15, unit: 'pcs'},
+            {ref: 'MENU001', designation: 'Charnière invisible Ø35mm', metier: 'Menuiserie', stock: 28, stockMin: 20, unit: 'pcs'},
+            {ref: 'MENU002', designation: 'Colle bois D3 bidon 5L', metier: 'Menuiserie', stock: 6, stockMin: 4, unit: 'pcs'},
+            {ref: 'EPI001', designation: 'Gants de protection latex T9', metier: 'EPI', stock: 85, stockMin: 50, unit: 'pcs'},
+            {ref: 'EPI002', designation: 'Casque de sécurité blanc', metier: 'EPI', stock: 18, stockMin: 15, unit: 'pcs'},
+            {ref: 'EPI003', designation: 'Lunettes de protection', metier: 'EPI', stock: 32, stockMin: 20, unit: 'pcs'},
+            {ref: 'EPI004', designation: 'Chaussures sécurité S3 T42', metier: 'EPI', stock: 8, stockMin: 10, unit: 'pcs'},
+            {ref: 'EPI005', designation: 'Masque FFP2 boîte de 20', metier: 'EPI', stock: 12, stockMin: 8, unit: 'boîte'},
+            {ref: 'EPI006', designation: 'Gilet haute visibilité', metier: 'EPI', stock: 25, stockMin: 15, unit: 'pcs'},
+            {ref: 'DIV001', designation: 'Ruban adhésif toile 50mm', metier: 'Divers', stock: 42, stockMin: 30, unit: 'rouleau'},
+            {ref: 'DIV002', designation: 'Graisse multi-usage 400ml', metier: 'Divers', stock: 16, stockMin: 12, unit: 'pcs'},
+            {ref: 'DIV003', designation: 'Dégraissant industriel 5L', metier: 'Divers', stock: 9, stockMin: 6, unit: 'pcs'},
+            {ref: 'DIV004', designation: 'Absorbant granulés 20kg', metier: 'Divers', stock: 5, stockMin: 4, unit: 'pcs'},
+            {ref: 'DIV005', designation: 'Sacs poubelle 100L (x25)', metier: 'Divers', stock: 14, stockMin: 10, unit: 'pcs'}
+        ];
+
+        function getBadgeClass(metier) {
+            const badges = {
+                'CVC': 'badge-cvc',
+                'Électricité': 'badge-elec',
+                'Plomberie': 'badge-plomb',
+                'Serrurerie': 'badge-serrure',
+                'Peinture': 'badge-peinture',
+                'Menuiserie': 'badge-menuiserie',
+                'EPI': 'badge-epi',
+                'Divers': 'badge-divers'
+            };
+            return badges[metier] || 'badge-cvc';
+        }
+
+        function getStockClass(stock, stockMin) {
+            if (stock < stockMin) return 'stock-low';
+            if (stock < stockMin * 1.5) return 'stock-medium';
+            return 'stock-good';
+        }
+
+        function renderInventory() {
+            const filterMetier = document.getElementById('filterMetier').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = inventory.filter(item => {
+                const matchMetier = filterMetier === 'all' || item.metier === filterMetier;
+                const matchSearch = item.designation.toLowerCase().includes(searchTerm) || 
+                                   item.ref.toLowerCase().includes(searchTerm);
+                return matchMetier && matchSearch;
+            });
+
+            const tbody = document.getElementById('inventoryTable');
+            tbody.innerHTML = filtered.map((item, index) => `
+                <tr>
+                    <td><strong>${item.ref}</strong></td>
+                    <td>${item.designation}</td>
+                    <td><span class="badge ${getBadgeClass(item.metier)}">${item.metier}</span></td>
+                    <td class="${getStockClass(item.stock, item.stockMin)}">${item.stock}</td>
+                    <td>${item.stockMin}</td>
+                    <td>${item.unit}</td>
+                    <td class="action-buttons">
+                        <input type="number" class="quantity-input" id="qty-${index}" value="1" min="1">
+                        <button class="btn-small btn-add" onclick="addStock(${index})">+</button>
+                        <button class="btn-small btn-remove" onclick="removeStock(${index})">-</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalItems').textContent = inventory.length;
+            
+            const lowStock = inventory.filter(item => item.stock < item.stockMin).length;
+            document.getElementById('lowStock').textContent = lowStock;
+        }
+
+        function addStock(index) {
+            const qty = parseInt(document.getElementById(`qty-${index}`).value) || 1;
+            inventory[index].stock += qty;
+            renderInventory();
+        }
+
+        function removeStock(index) {
+            const qty = parseInt(document.getElementById(`qty-${index}`).value) || 1;
+            inventory[index].stock = Math.max(0, inventory[index].stock - qty);
+            renderInventory();
+        }
+
+        function openModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('addItemForm').reset();
+        }
+
+        document.getElementById('addItemForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newItem = {
+                ref: document.getElementById('ref').value,
+                designation: document.getElementById('designation').value,
+                metier: document.getElementById('metier').value,
+                stock: parseInt(document.getElementById('stock').value),
+                stockMin: parseInt(document.getElementById('stockMin').value),
+                unit: document.getElementById('unit').value
+            };
+            
+            inventory.push(newItem);
+            renderInventory();
+            closeModal();
+        });
+
+        function exportData() {
+            let csv = 'Référence,Désignation,Corps de Métier,Stock Actuel,Stock Min,Unité\n';
+            inventory.forEach(item => {
+                csv += `${item.ref},${item.designation},${item.metier},${item.stock},${item.stockMin},${item.unit}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'inventaire_maintenance.csv';
+            a.click();
+        }
+
+        document.getElementById('filterMetier').addEventListener('change', renderInventory);
+        document.getElementById('searchInput').addEventListener('input', renderInventory);
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        renderInventory();
+    </script>
+    <script>
+const apiUrl = "https://script.google.com/macros/s/AKfycbxQNCgeizruXn4XiFx-pgmmVS73s33wRE554s-ka7YATpkRK7ag-Y8_CMJqL8wNkGH2/exec"; // remplace par ton URL
+
+async function loadInventory() {
+try {
+const response = await fetch(apiUrl, { mode: 'cors' }); // cors activé
+const data = await response.json(); // données JSON de Google Sheet
+
+// Si tu as déjà un tableau HTML avec id="data"
+const table = document.getElementById("data");
+if (!table) return;
+
+table.innerHTML = "";
+
+if (data.length > 0) {
+const headers = Object.keys(data[0]);
+
+// En-tête
+const thead = table.createTHead();
+const rowHead = thead.insertRow();
+headers.forEach(h => {
+const th = document.createElement("th");
+th.textContent = h;
+rowHead.appendChild(th);
+});
+
+// Corps
+const tbody = table.createTBody();
+data.forEach(item => {
+const row = tbody.insertRow();
+headers.forEach(h => {
+const cell = row.insertCell();
+cell.textContent = item[h];
+});
+});
+}
+
+} catch (err) {
+console.error("Erreur API Google Sheet :", err);
+}
+}
+
+// Rafraîchir toutes les 5 secondes
+loadInventory();
+setInterval(loadInventory, 5000);
+</script>
+</body>
+</html>
