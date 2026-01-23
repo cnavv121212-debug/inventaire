@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Prévention - Signature</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Logos décoratifs sur les côtés */
+        .logo-decoration {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            opacity: 0.1;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            font-weight: bold;
+            color: #1e3a8a;
+            z-index: 0;
+        }
+
+        .logo-left-top {
+            top: 50px;
+            left: -50px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .logo-left-bottom {
+            bottom: 100px;
+            left: -30px;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        .logo-right-top {
+            top: 100px;
+            right: -50px;
+            animation: float 7s ease-in-out infinite;
+        }
+
+        .logo-right-bottom {
+            bottom: 50px;
+            right: -30px;
+            animation: float 5s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: 'V';
+            position: absolute;
+            font-size: 300px;
+            font-weight: bold;
+            opacity: 0.05;
+            left: -50px;
+            top: -80px;
+        }
+
+        .header::after {
+            content: 'V';
+            position: absolute;
+            font-size: 300px;
+            font-weight: bold;
+            opacity: 0.05;
+            right: -50px;
+            top: -80px;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-header {
+            width: 150px;
+            height: 60px;
+            background: white;
+            margin: 0 auto 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e3a8a;
+            font-size: 24px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 50px 40px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+        }
+
+        .plan-text {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 5px solid #3b82f6;
+            padding: 25px;
+            margin-bottom: 40px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+        }
+
+        .plan-text h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .plan-text p {
+            line-height: 1.8;
+            color: #475569;
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .form-section h2 {
+            color: #1e3a8a;
+            margin-bottom: 25px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section h2::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(to bottom, #3b82f6, #1e3a8a);
+            border-radius: 3px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .signature-section h2 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .signature-section h2::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(to bottom, #3b82f6, #1e3a8a);
+            border-radius: 3px;
+        }
+
+        .signature-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #eff6ff;
+            border-radius: 8px;
+            color: #1e40af;
+            font-size: 14px;
+        }
+
+        .signature-pad {
+            border: 4px solid #3b82f6;
+            border-radius: 15px;
+            cursor: crosshair;
+            background: white;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .signature-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            font-size: 20px;
+            padding: 18px 60px;
+            margin-top: 20px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-submit:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .submit-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: none;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: none;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 25px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer-logo {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            font-size: 14px;
+        }
+
+        .footer-logo .logo-small {
+            width: 120px;
+            height: 50px;
+            background: white;
+            margin: 0 auto 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e3a8a;
+            font-size: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .signature-pad {
+                width: 100%;
+            }
+
+            .logo-decoration {
+                display: none;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .form-section,
+            .signature-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Décorations logo sur les côtés -->
+    <div class="logo-decoration logo-left-top">V</div>
+    <div class="logo-decoration logo-left-bottom">V</div>
+    <div class="logo-decoration logo-right-top">V</div>
+    <div class="logo-decoration logo-right-bottom">V</div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-header">VINCI</div>
+                <h1>📋 Plan de Prévention</h1>
+                <p>Signature Électronique des Prestataires</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="success-message" id="successMessage">
+                ✓ Signature enregistrée avec succès dans Google Sheets !
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="loading" id="loadingMessage" style="display: none;">
+                <div class="spinner"></div>
+                <p>Enregistrement en cours...</p>
+            </div>
+
+            <div class="plan-text">
+                <h3>📄 Contenu du Plan de Prévention</h3>
+                <p>aaaaaaaaaaa</p>
+            </div>
+
+            <div class="form-section">
+                <h2>👤 Informations du Prestataire</h2>
+                
+                <div class="form-group">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" required placeholder="Entrez votre nom">
+                </div>
+
+                <div class="form-group">
+                    <label for="prenom">Prénom *</label>
+                    <input type="text" id="prenom" required placeholder="Entrez votre prénom">
+                </div>
+
+                <div class="form-group">
+                    <label for="societe">Société *</label>
+                    <input type="text" id="societe" required placeholder="Entrez le nom de votre société">
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <h2>✍️ Signature</h2>
+                <div class="signature-info">
+                    💡 Veuillez signer dans le cadre ci-dessous en utilisant votre souris ou votre doigt (écran tactile)
+                </div>
+                
+                <canvas id="signatureCanvas" class="signature-pad" width="700" height="250"></canvas>
+                
+                <div class="signature-buttons">
+                    <button class="btn btn-clear" id="clearBtn">🗑️ Effacer la signature</button>
+                </div>
+            </div>
+
+            <div class="submit-container">
+                <button class="btn btn-submit" id="submitBtn">✅ Valider et Enregistrer</button>
+            </div>
+        </div>
+
+        <div class="footer-logo">
+            <div class="logo-small">VINCI</div>
+            <p>VINCI Facilities - Plan de Prévention © 2026</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SHEET_ID = '1L7tflNy6er276Qr-IsFzxzfNIjJTZF0-M2FcNNg98Fs';
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+        // Configuration du canvas de signature
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasSignature = false;
+
+        // Configuration du dessin
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Événements de dessin
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Support tactile
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            hasSignature = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        // Effacer la signature
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+        });
+
+        // Fonction pour envoyer les données à Google Sheets via Google Apps Script
+        async function sendToGoogleSheets(data) {
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxijX8jlC8WEBMfJ4LPsTkHzKJq1ZZ7w6TFlGcLZoxQvhifGdvgfsy0rXbydlgb6gbD/exec';
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Erreur:', error);
+                throw error;
+            }
+        }
+
+        // Soumettre le formulaire
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const nom = document.getElementById('nom').value.trim();
+            const prenom = document.getElementById('prenom').value.trim();
+            const societe = document.getElementById('societe').value.trim();
+
+            // Validation
+            if (!nom || !prenom || !societe) {
+                showError('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            if (!hasSignature) {
+                showError('Veuillez signer dans le cadre prévu');
+                return;
+            }
+
+            // Afficher le chargement
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // Convertir la signature en base64
+                const signatureData = canvas.toDataURL('image/png');
+                const currentDate = new Date().toLocaleString('fr-FR');
+
+                // Préparer les données
+                const data = {
+                    nom: nom,
+                    prenom: prenom,
+                    societe: societe,
+                    signature: signatureData,
+                    date: currentDate
+                };
+
+                // Envoyer à Google Sheets
+                await sendToGoogleSheets(data);
+
+                // Afficher le succès
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+
+                // Réinitialiser le formulaire après 3 secondes
+                setTimeout(function() {
+                    document.getElementById('nom').value = '';
+                    document.getElementById('prenom').value = '';
+                    document.getElementById('societe').value = '';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    hasSignature = false;
+                    document.getElementById('successMessage').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                }, 3000);
+
+            } catch (error) {
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                showError('Erreur lors de l\'enregistrement. Veuillez réessayer.');
+                console.error('Erreur:', error);
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
