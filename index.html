@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Consommables Maintenance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .sync-indicator {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sync-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-dot.syncing {
+            background: #4299e1;
+            animation: spin 1s linear infinite;
+        }
+
+        .sync-dot.error {
+            background: #f56565;
+            animation: none;
+        }
+
+        .sync-text {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .sync-time {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .main-tabs {
+            display: flex;
+            background: #1a202c;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .main-tab {
+            flex: 1;
+            padding: 20px;
+            cursor: pointer;
+            color: #a0aec0;
+            font-weight: 700;
+            font-size: 1.1em;
+            border: none;
+            background: none;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .main-tab:hover {
+            background: #2d3748;
+            color: white;
+        }
+
+        .main-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.active {
+            display: block;
+        }
+
+        .tabs {
+            display: flex;
+            background: #2d3748;
+            border-bottom: 2px solid #1a202c;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            color: #a0aec0;
+            font-weight: 600;
+            border: none;
+            background: none;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: #374151;
+            color: white;
+        }
+
+        .tab.active {
+            background: #48bb78;
+            color: white;
+        }
+
+        .site-name {
+            cursor: pointer;
+        }
+
+        .site-name:hover {
+            text-decoration: underline;
+        }
+
+        .tab .remove-tab {
+            margin-left: 10px;
+            color: #f56565;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 50%;
+            background: rgba(245, 101, 101, 0.1);
+        }
+
+        .tab .remove-tab:hover {
+            background: #f56565;
+            color: white;
+        }
+
+        .add-tab-btn {
+            padding: 15px 25px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-tab-btn:hover {
+            background: #38a169;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .controls {
+            padding: 25px;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 25px;
+            background: #edf2f7;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            padding: 25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: #2d3748;
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-cvc { background: #bee3f8; color: #2c5282; }
+        .badge-elec { background: #feebc8; color: #c05621; }
+        .badge-plomb { background: #c6f6d5; color: #22543d; }
+        .badge-serrure { background: #fbb6ce; color: #702459; }
+        .badge-peinture { background: #d6bcfa; color: #44337a; }
+        .badge-menuiserie { background: #fed7d7; color: #742a2a; }
+        .badge-epi { background: #fef5e7; color: #7d6608; }
+        .badge-divers { background: #e2e8f0; color: #2d3748; }
+
+        .stock-low { color: #f56565; font-weight: bold; }
+        .stock-medium { color: #ed8936; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+
+        .quantity-input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add { background: #48bb78; color: white; }
+        .btn-remove { background: #f56565; color: white; }
+        .btn-delete { background: #e53e3e; color: white; }
+        .btn-small:hover { transform: scale(1.05); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .close:hover {
+            color: #2d3748;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+        }
+
+        .metier-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .metier-item {
+            background: #edf2f7;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metier-item button {
+            background: #f56565;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .password-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(45, 55, 72, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .password-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .password-box h2 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .password-box p {
+            color: #718096;
+            margin-bottom: 30px;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .password-error {
+            color: #f56565;
+            font-size: 14px;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; }
+            .filter-group { width: 100%; }
+            .tabs { flex-wrap: wrap; }
+            .main-tabs { flex-direction: column; }
+            
+            .sync-indicator {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 15px auto 0;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Inventaire Consommables Maintenance</h1>
+            <p>Gestion en temps réel des stocks - Inventaire Principal et Itinérance</p>
+            
+            <div class="sync-indicator" id="syncIndicator">
+                <div class="sync-dot" id="syncDot"></div>
+                <div>
+                    <div class="sync-text" id="syncText">Connecté</div>
+                    <div class="sync-time" id="syncTime">En attente...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchMainTab('principal')">📦 Inventaire Principal</button>
+            <button class="main-tab" onclick="switchMainTab('itinerance')">🚛 Itinérance</button>
+            <button class="main-tab" onclick="switchMainTab('outils')">🔧 Outils Techniciens</button>
+        </div>
+
+        <div id="principal" class="main-content active">
+            <div class="controls">
+                <div class="filter-group">
+                    <label>Corps de métier:</label>
+                    <select class="filterMetier" data-site="principal" onchange="renderPrincipalInventory()">
+                        <option value="all">Tous</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Recherche:</label>
+                    <input type="text" class="searchInput" data-site="principal" placeholder="Rechercher..." oninput="renderPrincipalInventory()">
+                </div>
+                <button class="btn btn-primary" onclick="openArticleModal('principal')">+ Ajouter Article</button>
+                <button class="btn btn-warning" onclick="openMetierModal()">⚙️ Gérer Métiers</button>
+                <button class="btn btn-success" onclick="exportToExcel()">📊 Exporter Excel</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalItems-principal">0</div>
+                    <div class="stat-label">Articles Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lowStock-principal">0</div>
+                    <div class="stat-label">Stock Faible</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="metierCount-principal">8</div>
+                    <div class="stat-label">Corps de Métier</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Désignation</th>
+                            <th>Corps de Métier</th>
+                            <th>Stock Actuel</th>
+                            <th>Stock Min</th>
+                            <th>Unité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-principal"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="itinerance" class="main-content">
+            <div class="tabs" id="siteTabs"></div>
+            <div id="siteContents"></div>
+        </div>
+
+        <!-- Contenu Outils Techniciens -->
+        <div id="outils" class="main-content" style="position: relative;">
+            <!-- Overlay de protection par mot de passe -->
+            <div class="password-overlay" id="passwordOverlay">
+                <div class="password-box">
+                    <h2>🔒 Accès Protégé</h2>
+                    <p>Cette section est réservée aux responsables.<br>Veuillez entrer le mot de passe.</p>
+                    <input type="password" id="passwordInput" placeholder="Mot de passe" onkeypress="if(event.key === 'Enter') checkPassword()">
+                    <div class="password-error" id="passwordError">❌ Mot de passe incorrect</div>
+                    <button class="btn btn-primary" onclick="checkPassword()" style="width: 100%;">Déverrouiller</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="filter-group">
+                    <label>Technicien:</label>
+                    <select id="filterTechnicien" onchange="renderOutils()">
+                        <option value="all">Tous</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Catégorie:</label>
+                    <select id="filterCategorieOutil" onchange="renderOutils()">
+                        <option value="all">Toutes</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Recherche:</label>
+                    <input type="text" id="searchOutils" placeholder="Rechercher un outil..." oninput="renderOutils()">
+                </div>
+                <button class="btn btn-primary" onclick="openAddOutilModal()">+ Ajouter Outil</button>
+                <button class="btn btn-primary" onclick="openAddTechnicienModal()">👤 Ajouter Technicien</button>
+                <button class="btn btn-success" onclick="exportOutilsToExcel()">📊 Exporter</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalOutils">0</div>
+                    <div class="stat-label">Outils Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="outilsAffectes">0</div>
+                    <div class="stat-label">Outils Affectés</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTechniciens">0</div>
+                    <div class="stat-label">Techniciens</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Outil</th>
+                            <th>Catégorie</th>
+                            <th>N° Série</th>
+                            <th>Technicien</th>
+                            <th>État</th>
+                            <th>Date Attribution</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-outils"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalArticle" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ajouter un Article</h2>
+                <span class="close" onclick="closeModal('modalArticle')">&times;</span>
+            </div>
+            <form id="addItemForm" onsubmit="handleAddItem(event)">
+                <div class="form-group">
+                    <label>Référence:</label>
+                    <input type="text" id="ref" required>
+                </div>
+                <div class="form-group">
+                    <label>Désignation:</label>
+                    <input type="text" id="designation" required>
+                </div>
+                <div class="form-group">
+                    <label>Corps de Métier:</label>
+                    <select id="metier" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Stock Actuel:</label>
+                    <input type="number" id="stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Stock Minimum:</label>
+                    <input type="number" id="stockMin" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Unité:</label>
+                    <select id="unit" required>
+                        <option value="pcs">Pièce(s)</option>
+                        <option value="m">Mètre(s)</option>
+                        <option value="L">Litre(s)</option>
+                        <option value="kg">Kilogramme(s)</option>
+                        <option value="boîte">Boîte(s)</option>
+                        <option value="rouleau">Rouleau(x)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalMetier" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gérer les Corps de Métier</h2>
+                <span class="close" onclick="closeModal('modalMetier')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Ajouter un nouveau corps de métier:</label>
+                <input type="text" id="newMetier" placeholder="Ex: Climatisation">
+            </div>
+            <button class="btn btn-success" onclick="addMetier()" style="width: 100%; margin-bottom: 20px;">+ Ajouter</button>
+            <div class="metier-list" id="metierList"></div>
+        </div>
+    </div>
+
+    <div id="modalSite" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ajouter un Nouveau Site</h2>
+                <span class="close" onclick="closeModal('modalSite')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Nom du site:</label>
+                <input type="text" id="newSiteName" placeholder="Ex: Site 31, Entrepôt...">
+            </div>
+            <button class="btn btn-primary" onclick="addSite()" style="width: 100%;">Créer le Site</button>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter Outil -->
+    <div id="modalOutil" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ajouter un Outil</h2>
+                <span class="close" onclick="closeModal('modalOutil')">&times;</span>
+            </div>
+            <form id="addOutilForm" onsubmit="handleAddOutil(event)">
+                <div class="form-group">
+                    <label>Nom de l'outil:</label>
+                    <input type="text" id="outilNom" required placeholder="Ex: Perceuse sans fil">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie:</label>
+                    <select id="outilCategorie" required></select>
+                </div>
+                <div class="form-group">
+                    <label>N° de Série:</label>
+                    <input type="text" id="outilSerie" placeholder="Optionnel">
+                </div>
+                <div class="form-group">
+                    <label>Technicien affecté:</label>
+                    <select id="outilTechnicien">
+                        <option value="">Non affecté</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>État:</label>
+                    <select id="outilEtat" required>
+                        <option value="Bon">Bon état</option>
+                        <option value="Moyen">État moyen</option>
+                        <option value="Réparation">En réparation</option>
+                        <option value="HS">Hors service</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter Technicien -->
+    <div id="modalTechnicien" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ajouter un Technicien</h2>
+                <span class="close" onclick="closeModal('modalTechnicien')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Nom du technicien:</label>
+                <input type="text" id="technicienNom" placeholder="Ex: Jean Dupont">
+            </div>
+            <div class="form-group">
+                <label>Spécialité:</label>
+                <select id="technicienSpecialite">
+                    <option value="CVC">CVC</option>
+                    <option value="Électricité">Électricité</option>
+                    <option value="Plomberie">Plomberie</option>
+                    <option value="Serrurerie">Serrurerie</option>
+                    <option value="Menuiserie">Menuiserie</option>
+                    <option value="Polyvalent">Polyvalent</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="addTechnicien()" style="width: 100%; margin-bottom: 20px;">+ Ajouter</button>
+            <div class="metier-list" id="techniciensList"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-X5tygI-JD5lH22RMcOHQo2-qXIc_ZuQQKPwzPIsyE-kh7r6llcZjhrWgmyPuCnRA/exec';
+
+        let inventoryPrincipal = [];
+        let sites = {
+            'Site 1 - Paris': [], 'Site 2 - Lyon': [], 'Site 3 - Marseille': [], 'Site 4 - Toulouse': [],
+            'Site 5 - Nice': [], 'Site 6 - Nantes': [], 'Site 7 - Strasbourg': [], 'Site 8 - Montpellier': [],
+            'Site 9 - Bordeaux': [], 'Site 10 - Lille': [], 'Site 11 - Rennes': [], 'Site 12 - Reims': [],
+            'Site 13 - Le Havre': [], 'Site 14 - Saint-Étienne': [], 'Site 15 - Toulon': [], 'Site 16 - Grenoble': [],
+            'Site 17 - Dijon': [], 'Site 18 - Angers': [], 'Site 19 - Nîmes': [], 'Site 20 - Villeurbanne': [],
+            'Site 21 - Clermont-Ferrand': [], 'Site 22 - Le Mans': [], 'Site 23 - Aix-en-Provence': [],
+            'Site 24 - Brest': [], 'Site 25 - Tours': [], 'Site 26 - Amiens': [], 'Site 27 - Limoges': [],
+            'Site 28 - Annecy': [], 'Camion 1': [], 'Camion 2': []
+        };
+
+        let metiers = ['CVC', 'Électricité', 'Plomberie', 'Serrurerie', 'Peinture', 'Menuiserie', 'EPI', 'Divers'];
+        let currentSite = 'Site 1 - Paris';
+
+        // Données pour les outils
+        let outils = [];
+        let techniciens = [];
+        let categoriesOutils = ['Perceuse', 'Visseuse', 'Marteau', 'Clé', 'Multimètre', 'Échelle', 'Échafaudage', 'Scie', 'Meuleuse', 'Autre'];
+        
+        // Mot de passe pour l'accès outils
+        const OUTILS_PASSWORD = 'topaz';
+        let outilsUnlocked = false;
+
+        function switchMainTab(tab) {
+            document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+            
+            // Si on accède à l'onglet outils et qu'il n'est pas déverrouillé
+            if (tab === 'outils' && !outilsUnlocked) {
+                document.getElementById('passwordOverlay').style.display = 'flex';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            
+            if (input.value === OUTILS_PASSWORD) {
+                outilsUnlocked = true;
+                document.getElementById('passwordOverlay').style.display = 'none';
+                input.value = '';
+                error.style.display = 'none';
+                showNotification('✓ Accès autorisé', 'success');
+                renderOutils();
+            } else {
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+                
+                // Animation de tremblement
+                const box = document.querySelector('.password-box');
+                box.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    box.style.animation = '';
+                }, 500);
+            }
+        }
+
+        function switchTab(siteName) {
+            currentSite = siteName;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`content-${siteName.replace(/\s+/g, '-')}`).classList.add('active');
+        }
+
+        function initializeSites() {
+            const siteContents = document.getElementById('siteContents');
+            siteContents.innerHTML = '';
+
+            Object.keys(sites).forEach(siteName => {
+                const content = document.createElement('div');
+                content.className = 'tab-content';
+                content.id = `content-${siteName.replace(/\s+/g, '-')}`;
+                if (siteName === currentSite) content.classList.add('active');
+
+                content.innerHTML = `
+                    <div class="controls">
+                        <div class="filter-group">
+                            <label>Corps de métier:</label>
+                            <select class="filterMetier" data-site="${siteName}" onchange="renderInventory('${siteName}')">
+                                <option value="all">Tous</option>
+                                ${metiers.map(m => `<option value="${m}">${m}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Recherche:</label>
+                            <input type="text" class="searchInput" data-site="${siteName}" placeholder="Rechercher..." oninput="renderInventory('${siteName}')">
+                        </div>
+                        <button class="btn btn-primary" onclick="openArticleModal('${siteName}')">+ Ajouter</button>
+                        <button class="btn btn-warning" onclick="openMetierModal()">⚙️ Métiers</button>
+                        <button class="btn btn-success" onclick="exportToExcel()">📊 Export</button>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-card"><div class="stat-value" id="totalItems-${siteName.replace(/\s+/g, '-')}">0</div><div class="stat-label">Articles</div></div>
+                        <div class="stat-card"><div class="stat-value" id="lowStock-${siteName.replace(/\s+/g, '-')}">0</div><div class="stat-label">Stock Faible</div></div>
+                        <div class="stat-card"><div class="stat-value" id="metierCount-${siteName.replace(/\s+/g, '-')}">${metiers.length}</div><div class="stat-label">Métiers</div></div>
+                    </div>
+                    <div class="table-container">
+                        <table><thead><tr><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Min</th><th>Unité</th><th>Actions</th></tr></thead>
+                        <tbody id="table-${siteName.replace(/\s+/g, '-')}"></tbody></table>
+                    </div>`;
+                siteContents.appendChild(content);
+            });
+            updateTabs();
+        }
+
+        function updateTabs() {
+            const tabsContainer = document.getElementById('siteTabs');
+            tabsContainer.innerHTML = '';
+            
+            Object.keys(sites).forEach(siteName => {
+                const tab = document.createElement('button');
+                tab.className = 'tab';
+                if (siteName === currentSite) tab.classList.add('active');
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = siteName;
+                nameSpan.className = 'site-name';
+                nameSpan.ondblclick = (e) => {
+                    e.stopPropagation();
+                    renameSite(siteName);
+                };
+                
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-tab';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeSite(siteName);
+                };
+                
+                tab.appendChild(nameSpan);
+                tab.appendChild(removeBtn);
+                tab.onclick = () => switchTab(siteName);
+                tabsContainer.appendChild(tab);
+            });
+            
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-tab-btn';
+            addBtn.textContent = '+ Ajouter Site';
+            addBtn.onclick = () => document.getElementById('modalSite').style.display = 'block';
+            tabsContainer.appendChild(addBtn);
+        }
+
+        function getBadgeClass(metier) {
+            const badges = {'CVC': 'badge-cvc', 'Électricité': 'badge-elec', 'Plomberie': 'badge-plomb', 
+                'Serrurerie': 'badge-serrure', 'Peinture': 'badge-peinture', 'Menuiserie': 'badge-menuiserie', 
+                'EPI': 'badge-epi', 'Divers': 'badge-divers'};
+            return badges[metier] || 'badge-divers';
+        }
+
+        function getStockClass(stock, stockMin) {
+            if (stock < stockMin) return 'stock-low';
+            if (stock < stockMin * 1.5) return 'stock-medium';
+            return 'stock-good';
+        }
+
+        function renderPrincipalInventory() {
+            const filterMetier = document.querySelector('.filterMetier[data-site="principal"]').value;
+            const searchTerm = document.querySelector('.searchInput[data-site="principal"]').value.toLowerCase();
+            let filtered = inventoryPrincipal.filter(item => 
+                (filterMetier === 'all' || item.metier === filterMetier) && 
+                (item.designation.toLowerCase().includes(searchTerm) || item.ref.toLowerCase().includes(searchTerm))
+            );
+            
+            document.getElementById('table-principal').innerHTML = filtered.map((item, i) => {
+                const idx = inventoryPrincipal.indexOf(item);
+                return `<tr>
+                    <td><strong>${item.ref}</strong></td>
+                    <td>${item.designation}</td>
+                    <td><span class="badge ${getBadgeClass(item.metier)}">${item.metier}</span></td>
+                    <td class="${getStockClass(item.stock, item.stockMin)}">${item.stock}</td>
+                    <td>${item.stockMin}</td>
+                    <td>${item.unit}</td>
+                    <td class="action-buttons">
+                        <input type="number" class="quantity-input" id="qty-principal-${idx}" value="1" min="1">
+                        <button class="btn-small btn-add" onclick="addStock('principal', ${idx})">+</button>
+                        <button class="btn-small btn-remove" onclick="removeStock('principal', ${idx})">-</button>
+                        <button class="btn-small btn-delete" onclick="deleteItem('principal', ${idx})">✕</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            updateStats('principal');
+        }
+
+        function renderInventory(siteName) {
+            const filterMetier = document.querySelector(`.filterMetier[data-site="${siteName}"]`).value;
+            const searchTerm = document.querySelector(`.searchInput[data-site="${siteName}"]`).value.toLowerCase();
+            let filtered = sites[siteName].filter(item => 
+                (filterMetier === 'all' || item.metier === filterMetier) && 
+                (item.designation.toLowerCase().includes(searchTerm) || item.ref.toLowerCase().includes(searchTerm))
+            );
+            
+            document.getElementById(`table-${siteName.replace(/\s+/g, '-')}`).innerHTML = filtered.map((item, i) => {
+                const idx = sites[siteName].indexOf(item);
+                return `<tr>
+                    <td><strong>${item.ref}</strong></td>
+                    <td>${item.designation}</td>
+                    <td><span class="badge ${getBadgeClass(item.metier)}">${item.metier}</span></td>
+                    <td class="${getStockClass(item.stock, item.stockMin)}">${item.stock}</td>
+                    <td>${item.stockMin}</td>
+                    <td>${item.unit}</td>
+                    <td class="action-buttons">
+                        <input type="number" class="quantity-input" id="qty-${siteName}-${idx}" value="1" min="1">
+                        <button class="btn-small btn-add" onclick="addStock('${siteName}', ${idx})">+</button>
+                        <button class="btn-small btn-remove" onclick="removeStock('${siteName}', ${idx})">-</button>
+                        <button class="btn-small btn-delete" onclick="deleteItem('${siteName}', ${idx})">✕</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            updateStats(siteName);
+        }
+
+        function updateStats(siteName) {
+            const siteId = siteName === 'principal' ? 'principal' : siteName.replace(/\s+/g, '-');
+            const inventory = siteName === 'principal' ? inventoryPrincipal : sites[siteName];
+            document.getElementById(`totalItems-${siteId}`).textContent = inventory.length;
+            document.getElementById(`lowStock-${siteId}`).textContent = inventory.filter(i => i.stock < i.stockMin).length;
+            document.getElementById(`metierCount-${siteId}`).textContent = metiers.length;
+        }
+
+        function addStock(siteName, index) {
+            const qty = parseInt(document.getElementById(`qty-${siteName}-${index}`).value) || 1;
+            if (siteName === 'principal') { 
+                inventoryPrincipal[index].stock += qty; 
+                renderPrincipalInventory(); 
+            } else { 
+                sites[siteName][index].stock += qty; 
+                renderInventory(siteName); 
+            }
+            syncToGoogleSheets();
+        }
+
+        function removeStock(siteName, index) {
+            const qty = parseInt(document.getElementById(`qty-${siteName}-${index}`).value) || 1;
+            if (siteName === 'principal') { 
+                inventoryPrincipal[index].stock = Math.max(0, inventoryPrincipal[index].stock - qty); 
+                renderPrincipalInventory(); 
+            } else { 
+                sites[siteName][index].stock = Math.max(0, sites[siteName][index].stock - qty); 
+                renderInventory(siteName); 
+            }
+            syncToGoogleSheets();
+        }
+
+        function deleteItem(siteName, index) {
+            if (confirm('Supprimer cet article ?')) {
+                if (siteName === 'principal') { 
+                    inventoryPrincipal.splice(index, 1); 
+                    renderPrincipalInventory(); 
+                } else { 
+                    sites[siteName].splice(index, 1); 
+                    renderInventory(siteName); 
+                }
+                syncToGoogleSheets();
+            }
+        }
+
+        function openArticleModal(siteName) {
+            currentSite = siteName;
+            document.getElementById('metier').innerHTML = metiers.map(m => `<option value="${m}">${m}</option>`).join('');
+            document.getElementById('modalArticle').style.display = 'block';
+        }
+
+        function openMetierModal() {
+            document.getElementById('metierList').innerHTML = metiers.map(m => 
+                `<div class="metier-item"><span>${m}</span><button onclick="removeMetier('${m}')">×</button></div>`
+            ).join('');
+            document.getElementById('modalMetier').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            if (modalId === 'modalArticle') document.getElementById('addItemForm').reset();
+        }
+
+        function handleAddItem(e) {
+            e.preventDefault();
+            const newItem = {
+                ref: document.getElementById('ref').value,
+                designation: document.getElementById('designation').value,
+                metier: document.getElementById('metier').value,
+                stock: parseInt(document.getElementById('stock').value),
+                stockMin: parseInt(document.getElementById('stockMin').value),
+                unit: document.getElementById('unit').value
+            };
+            
+            if (currentSite === 'principal') { 
+                inventoryPrincipal.push(newItem); 
+                renderPrincipalInventory(); 
+            } else { 
+                sites[currentSite].push(newItem); 
+                renderInventory(currentSite); 
+            }
+            syncToGoogleSheets();
+            closeModal('modalArticle');
+        }
+
+        function addMetier() {
+            const newMetier = document.getElementById('newMetier').value.trim();
+            if (newMetier && !metiers.includes(newMetier)) {
+                metiers.push(newMetier);
+                document.getElementById('newMetier').value = '';
+                openMetierModal();
+                initializeSites();
+                renderPrincipalInventory();
+                syncToGoogleSheets();
+            }
+        }
+
+        function removeMetier(metier) {
+            if (confirm(`Supprimer "${metier}" ?`)) {
+                metiers = metiers.filter(m => m !== metier);
+                openMetierModal();
+                initializeSites();
+                renderPrincipalInventory();
+                syncToGoogleSheets();
+            }
+        }
+
+        function addSite() {
+            const siteName = document.getElementById('newSiteName').value.trim();
+            if (siteName && !sites[siteName]) {
+                sites[siteName] = [];
+                initializeSites();
+                document.getElementById('newSiteName').value = '';
+                closeModal('modalSite');
+                syncToGoogleSheets();
+            }
+        }
+
+        function removeSite(siteName) {
+            if (confirm(`Supprimer "${siteName}" ?`)) {
+                delete sites[siteName];
+                if (currentSite === siteName) currentSite = Object.keys(sites)[0];
+                initializeSites();
+                syncToGoogleSheets();
+            }
+        }
+
+        function renameSite(oldName) {
+            const newName = prompt('Nouveau nom:', oldName);
+            if (newName && newName.trim() && newName !== oldName) {
+                if (sites[newName]) { alert('Ce nom existe déjà !'); return; }
+                sites[newName] = sites[oldName];
+                delete sites[oldName];
+                if (currentSite === oldName) currentSite = newName;
+                initializeSites();
+                syncToGoogleSheets();
+            }
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const wsPrincipal = XLSX.utils.json_to_sheet(
+                inventoryPrincipal.map(item => ({
+                    'Référence': item.ref, 'Désignation': item.designation, 'Corps de Métier': item.metier,
+                    'Stock Actuel': item.stock, 'Stock Min': item.stockMin, 'Unité': item.unit
+                }))
+            );
+            XLSX.utils.book_append_sheet(wb, wsPrincipal, 'Inventaire Principal');
+            
+            Object.keys(sites).forEach(siteName => {
+                const wsData = sites[siteName].map(item => ({
+                    'Référence': item.ref, 'Désignation': item.designation, 'Corps de Métier': item.metier,
+                    'Stock Actuel': item.stock, 'Stock Min': item.stockMin, 'Unité': item.unit
+                }));
+                const ws = XLSX.utils.json_to_sheet(wsData);
+                const sheetName = siteName.length > 31 ? siteName.substring(0, 31) : siteName;
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+            
+            XLSX.writeFile(wb, 'Inventaire_Multi_Sites.xlsx');
+        }
+
+        // 🔄 SYNCHRONISATION AVEC GOOGLE SHEETS
+        function updateSyncIndicator(status, message, time) {
+            const dot = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            const timeEl = document.getElementById('syncTime');
+            
+            dot.className = 'sync-dot';
+            
+            switch(status) {
+                case 'syncing':
+                    dot.classList.add('syncing');
+                    text.textContent = 'Synchronisation...';
+                    break;
+                case 'success':
+                    text.textContent = 'Synchronisé';
+                    timeEl.textContent = time || 'À l\'instant';
+                    break;
+                case 'error':
+                    dot.classList.add('error');
+                    text.textContent = 'Erreur de connexion';
+                    timeEl.textContent = time || 'Échec';
+                    break;
+                case 'loading':
+                    dot.classList.add('syncing');
+                    text.textContent = 'Chargement...';
+                    break;
+            }
+        }
+
+        async function syncToGoogleSheets() {
+            try {
+                const data = {
+                    inventoryPrincipal: inventoryPrincipal,
+                    sites: sites,
+                    metiers: metiers,
+                    outils: outils,
+                    techniciens: techniciens,
+                    categoriesOutils: categoriesOutils
+                };
+                
+                updateSyncIndicator('syncing', 'Synchronisation...');
+                showNotification('⏳ Synchronisation...', 'info');
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    console.log('✅ Synchronisé:', result.rows, 'lignes');
+                    updateSyncIndicator('success', 'Synchronisé', timeStr);
+                    showNotification('✓ Synchronisé avec Google Sheets', 'success');
+                } else {
+                    console.error('Erreur:', result.error);
+                    updateSyncIndicator('error', 'Erreur', 'Échec');
+                    showNotification('⚠ Erreur de synchronisation', 'warning');
+                }
+                
+            } catch (error) {
+                console.error('Erreur de synchronisation:', error);
+                updateSyncIndicator('error', 'Erreur de connexion', 'Échec');
+                showNotification('✗ Erreur de connexion', 'error');
+            }
+        }
+
+        // 📥 CHARGEMENT DEPUIS GOOGLE SHEETS
+        async function loadFromGoogleSheets() {
+            try {
+                updateSyncIndicator('loading', 'Chargement...');
+                showNotification('⏳ Chargement des données...', 'info');
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?action=load');
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Erreur:', data.error);
+                    updateSyncIndicator('error', 'Erreur', data.error);
+                    showNotification('⚠ ' + data.error, 'warning');
+                    return;
+                }
+                
+                if (data.inventoryPrincipal) inventoryPrincipal = data.inventoryPrincipal;
+                if (data.sites) sites = data.sites;
+                if (data.metiers && data.metiers.length > 0) metiers = data.metiers;
+                if (data.outils) outils = data.outils;
+                if (data.techniciens) techniciens = data.techniciens;
+                if (data.categoriesOutils) categoriesOutils = data.categoriesOutils;
+                
+                document.querySelector('.filterMetier[data-site="principal"]').innerHTML = 
+                    '<option value="all">Tous</option>' + metiers.map(m => `<option value="${m}">${m}</option>`).join('');
+                
+                initializeSites();
+                renderPrincipalInventory();
+                Object.keys(sites).forEach(site => renderInventory(site));
+                renderOutils();
+                updateOutilsSelects();
+                
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                
+                console.log('✅ Chargé:', inventoryPrincipal.length, 'articles principal,', Object.keys(sites).length, 'sites');
+                updateSyncIndicator('success', 'Synchronisé', timeStr);
+                showNotification('✓ Données chargées', 'success');
+                
+            } catch (error) {
+                console.error('Erreur de chargement:', error);
+                updateSyncIndicator('error', 'Erreur de connexion', 'Échec');
+                showNotification('⚠ Impossible de charger les données', 'warning');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            const colors = {
+                success: '#48bb78',
+                error: '#f56565',
+                warning: '#ed8936',
+                info: '#4299e1'
+            };
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                border-radius: 8px;
+                font-weight: 600;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // ========== GESTION DES OUTILS ==========
+
+        function renderOutils() {
+            const filterTech = document.getElementById('filterTechnicien').value;
+            const filterCat = document.getElementById('filterCategorieOutil').value;
+            const searchTerm = document.getElementById('searchOutils').value.toLowerCase();
+
+            let filtered = outils.filter(outil => {
+                const matchTech = filterTech === 'all' || outil.technicien === filterTech;
+                const matchCat = filterCat === 'all' || outil.categorie === filterCat;
+                const matchSearch = outil.nom.toLowerCase().includes(searchTerm) || 
+                                   (outil.serie && outil.serie.toLowerCase().includes(searchTerm));
+                return matchTech && matchCat && matchSearch;
+            });
+
+            const tbody = document.getElementById('table-outils');
+            tbody.innerHTML = filtered.map((outil, i) => {
+                const idx = outils.indexOf(outil);
+                const etatClass = {
+                    'Bon': 'stock-good',
+                    'Moyen': 'stock-medium',
+                    'Réparation': 'stock-medium',
+                    'HS': 'stock-low'
+                }[outil.etat] || '';
+
+                return `
+                <tr>
+                    <td><strong>${outil.nom}</strong></td>
+                    <td><span class="badge badge-divers">${outil.categorie}</span></td>
+                    <td>${outil.serie || '-'}</td>
+                    <td>${outil.technicien || '<em>Non affecté</em>'}</td>
+                    <td class="${etatClass}">${outil.etat}</td>
+                    <td>${outil.dateAttribution || '-'}</td>
+                    <td class="action-buttons">
+                        <button class="btn-small btn-add" onclick="affecterOutil(${idx})" title="Affecter">👤</button>
+                        <button class="btn-small btn-warning" onclick="changerEtatOutil(${idx})" title="Changer état">⚙️</button>
+                        <button class="btn-small btn-delete" onclick="deleteOutil(${idx})" title="Supprimer">✕</button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+
+            updateOutilsStats();
+        }
+
+        function updateOutilsStats() {
+            document.getElementById('totalOutils').textContent = outils.length;
+            document.getElementById('outilsAffectes').textContent = outils.filter(o => o.technicien).length;
+            document.getElementById('totalTechniciens').textContent = techniciens.length;
+        }
+
+        function updateOutilsSelects() {
+            // Mettre à jour le filtre techniciens
+            const filterTech = document.getElementById('filterTechnicien');
+            filterTech.innerHTML = '<option value="all">Tous</option>' + 
+                techniciens.map(t => `<option value="${t.nom}">${t.nom}</option>`).join('');
+
+            // Mettre à jour le filtre catégories
+            const filterCat = document.getElementById('filterCategorieOutil');
+            filterCat.innerHTML = '<option value="all">Toutes</option>' + 
+                categoriesOutils.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            // Mettre à jour le select dans le modal
+            const selectTech = document.getElementById('outilTechnicien');
+            if (selectTech) {
+                selectTech.innerHTML = '<option value="">Non affecté</option>' + 
+                    techniciens.map(t => `<option value="${t.nom}">${t.nom}</option>`).join('');
+            }
+
+            const selectCat = document.getElementById('outilCategorie');
+            if (selectCat) {
+                selectCat.innerHTML = categoriesOutils.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+        }
+
+        function openAddOutilModal() {
+            updateOutilsSelects();
+            document.getElementById('modalOutil').style.display = 'block';
+        }
+
+        function handleAddOutil(e) {
+            e.preventDefault();
+            const newOutil = {
+                nom: document.getElementById('outilNom').value,
+                categorie: document.getElementById('outilCategorie').value,
+                serie: document.getElementById('outilSerie').value,
+                technicien: document.getElementById('outilTechnicien').value,
+                etat: document.getElementById('outilEtat').value,
+                dateAttribution: document.getElementById('outilTechnicien').value ? 
+                    new Date().toLocaleDateString('fr-FR') : ''
+            };
+            
+            outils.push(newOutil);
+            renderOutils();
+            syncToGoogleSheets();
+            closeModal('modalOutil');
+            document.getElementById('addOutilForm').reset();
+        }
+
+        function affecterOutil(index) {
+            const outil = outils[index];
+            const tech = prompt('Affecter à quel technicien ?\n\nTechniciens disponibles:\n' + 
+                techniciens.map(t => '- ' + t.nom).join('\n'), outil.technicien || '');
+            
+            if (tech !== null) {
+                if (tech === '') {
+                    outils[index].technicien = '';
+                    outils[index].dateAttribution = '';
+                } else if (techniciens.some(t => t.nom === tech)) {
+                    outils[index].technicien = tech;
+                    outils[index].dateAttribution = new Date().toLocaleDateString('fr-FR');
+                } else {
+                    alert('Technicien non trouvé !');
+                    return;
+                }
+                renderOutils();
+                syncToGoogleSheets();
+            }
+        }
+
+        function changerEtatOutil(index) {
+            const etats = ['Bon', 'Moyen', 'Réparation', 'HS'];
+            const choix = prompt('Nouvel état:\n1 - Bon\n2 - Moyen\n3 - En réparation\n4 - Hors service', '1');
+            
+            if (choix) {
+                const idx = parseInt(choix) - 1;
+                if (idx >= 0 && idx < etats.length) {
+                    outils[index].etat = etats[idx];
+                    renderOutils();
+                    syncToGoogleSheets();
+                }
+            }
+        }
+
+        function deleteOutil(index) {
+            if (confirm('Supprimer cet outil ?')) {
+                outils.splice(index, 1);
+                renderOutils();
+                syncToGoogleSheets();
+            }
+        }
+
+        function openAddTechnicienModal() {
+            renderTechniciensList();
+            document.getElementById('modalTechnicien').style.display = 'block';
+        }
+
+        function renderTechniciensList() {
+            const list = document.getElementById('techniciensList');
+            list.innerHTML = techniciens.map(t => `
+                <div class="metier-item">
+                    <span><strong>${t.nom}</strong> - ${t.specialite}</span>
+                    <button onclick="removeTechnicien('${t.nom}')">×</button>
+                </div>
+            `).join('');
+        }
+
+        function addTechnicien() {
+            const nom = document.getElementById('technicienNom').value.trim();
+            const specialite = document.getElementById('technicienSpecialite').value;
+            
+            if (nom && !techniciens.some(t => t.nom === nom)) {
+                techniciens.push({ nom, specialite });
+                document.getElementById('technicienNom').value = '';
+                renderTechniciensList();
+                updateOutilsSelects();
+                syncToGoogleSheets();
+            } else if (techniciens.some(t => t.nom === nom)) {
+                alert('Ce technicien existe déjà !');
+            }
+        }
+
+        function removeTechnicien(nom) {
+            if (confirm(`Supprimer ${nom} ?\n\nAttention: Les outils affectés seront marqués comme non affectés.`)) {
+                // Désaffecter les outils
+                outils.forEach(outil => {
+                    if (outil.technicien === nom) {
+                        outil.technicien = '';
+                        outil.dateAttribution = '';
+                    }
+                });
+                
+                techniciens = techniciens.filter(t => t.nom !== nom);
+                renderTechniciensList();
+                updateOutilsSelects();
+                renderOutils();
+                syncToGoogleSheets();
+            }
+        }
+
+        function exportOutilsToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            const wsData = outils.map(outil => ({
+                'Outil': outil.nom,
+                'Catégorie': outil.categorie,
+                'N° Série': outil.serie || '',
+                'Technicien': outil.technicien || 'Non affecté',
+                'État': outil.etat,
+                'Date Attribution': outil.dateAttribution || ''
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Outils Techniciens');
+            
+            // Ajouter une feuille avec les techniciens
+            const wsTech = XLSX.utils.json_to_sheet(
+                techniciens.map(t => ({
+                    'Nom': t.nom,
+                    'Spécialité': t.specialite,
+                    'Nb Outils': outils.filter(o => o.technicien === t.nom).length
+                }))
+            );
+            XLSX.utils.book_append_sheet(wb, wsTech, 'Techniciens');
+            
+            XLSX.writeFile(wb, 'Outils_Techniciens.xlsx');
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) event.target.style.display = 'none';
+        };
+
+        // 🚀 INITIALISATION AU CHARGEMENT
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Application démarrée');
+            console.log('📡 URL Google Script:', GOOGLE_SCRIPT_URL);
+            
+            document.querySelector('.filterMetier[data-site="principal"]').innerHTML = 
+                '<option value="all">Tous</option>' + metiers.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            initializeSites();
+            
+            // Charger les données depuis Google Sheets
+            loadFromGoogleSheets();
+            
+            // Initialiser les selects outils
+            updateOutilsSelects();
+            
+            // Synchronisation automatique toutes les 30 secondes
+            setInterval(() => {
+                console.log('🔄 Synchronisation automatique...');
+                loadFromGoogleSheets();
+            }, 30000);
+        });
+
+        // Style pour les animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+                20%, 40%, 60%, 80% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
