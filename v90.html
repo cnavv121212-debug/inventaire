@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Maintenance - Vinci Facilities</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #004489; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: #2d3748; color: white; padding: 25px 40px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .header-left { display: flex; align-items: center; gap: 30px; }
+        .header-logo { height: 55px; width: auto; }
+        .header-title { display: flex; flex-direction: column; }
+        .header h1 { font-size: 1.8em; margin: 0; font-weight: 600; }
+        .header p { font-size: 0.9em; color: rgba(255,255,255,0.8); margin-top: 5px; }
+        .sync-indicator { position: absolute; top: 20px; right: 30px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 25px; backdrop-filter: blur(10px); }
+        .sync-dot { width: 12px; height: 12px; border-radius: 50%; background: #48bb78; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #4299e1; animation: spin 1s linear infinite; }
+        .sync-dot.error { background: #f56565; animation: none; }
+        .sync-text { color: white; font-size: 14px; font-weight: 600; }
+        .sync-time { color: rgba(255,255,255,0.7); font-size: 12px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .main-tabs { display: flex; background: #2d3748; border-bottom: 3px solid #004489; }
+        .main-tab { flex: 1; padding: 20px; cursor: pointer; color: #a0aec0; font-weight: 700; font-size: 1.1em; border: none; background: none; transition: all 0.3s; text-align: center; }
+        .main-tab:hover { background: #1a202c; color: white; }
+        .main-tab.active { background: #004489; color: white; }
+        .main-content { display: none; }
+        .main-content.active { display: block; }
+        .controls { padding: 25px; background: #f7fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 250px; }
+        .filter-group label { font-weight: 600; color: #2d3748; }
+        select, input { padding: 10px 15px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; flex: 1; transition: all 0.3s; }
+        select:focus, input:focus { outline: none; border-color: #004489; box-shadow: 0 0 0 3px rgba(0, 68, 137, 0.1); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: #004489; color: white; }
+        .btn-primary:hover { background: #1E4F93; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 68, 137, 0.3); }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .btn-warning { background: #2d3748; color: white; }
+        .btn-warning:hover { background: #1a202c; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: #edf2f7; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-value { font-size: 2em; font-weight: bold; color: #718096; }
+        .stat-value.critical { color: #E31E24; }
+        .stat-label { color: #718096; margin-top: 5px; font-size: 0.9em; }
+        .table-container { padding: 25px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        thead { background: #2d3748; color: white; }
+        th { padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+        tbody tr { transition: background 0.2s; }
+        tbody tr:hover { background: #f7fafc; }
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+        .badge-cvc { background: #bee3f8; color: #2c5282; }
+        .badge-elec { background: #feebc8; color: #c05621; }
+        .badge-plomb { background: #c6f6d5; color: #22543d; }
+        .badge-divers { background: #e2e8f0; color: #2d3748; }
+        .stock-low { color: #f56565; font-weight: bold; }
+        .stock-medium { color: #ed8936; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+        .btn-small { padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-add { background: #48bb78; color: white; }
+        .btn-remove { background: #f56565; color: white; }
+        .btn-delete { background: #e53e3e; color: white; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .close { font-size: 28px; cursor: pointer; color: #718096; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; }
+        .site-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; padding: 25px; }
+        .site-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+        .site-card:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(0,0,0,0.15); }
+        .site-name { font-weight: 700; color: #2d3748; font-size: 1.1em; }
+        .site-count { color: #718096; font-size: 0.9em; margin-top: 5px; }
+        .tech-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 25px; }
+        .tech-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .tech-name { font-weight: 600; color: #2d3748; }
+        .metier-section { padding: 25px; background: #f7fafc; border-bottom: 2px solid #e2e8f0; }
+        .metier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .metier-header h3 { color: #2d3748; font-size: 1.2em; }
+        .metiers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .metier-tag { background: white; padding: 10px 15px; border-radius: 8px; border: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+        .metier-tag:hover { border-color: #004489; box-shadow: 0 2px 8px rgba(0,68,137,0.1); }
+        .metier-name { font-weight: 600; color: #2d3748; }
+        .metier-count { color: #718096; font-size: 0.9em; margin-left: 10px; }
+        .btn-icon { padding: 5px 8px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; background: #e53e3e; color: white; }
+        .btn-icon:hover { background: #c53030; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); text-align: center; min-width: 350px; }
+        .login-box h2 { margin-bottom: 25px; color: #2d3748; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 16px; }
+        .login-box input:focus { outline: none; border-color: #004489; }
+        .login-error { color: #e53e3e; margin-top: 10px; font-size: 14px; display: none; }
+        @media (max-width: 768px) { 
+            .sync-indicator { position: relative; top: auto; right: auto; margin: 15px auto 0; } 
+            .header-left { flex-direction: column; gap: 15px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🔒 Connexion requise</h2>
+            <input type="password" id="passwordInput" placeholder="Entrez le mot de passe" onkeypress="if(event.key==='Enter') checkPassword()">
+            <button class="btn btn-primary" onclick="checkPassword()">Se connecter</button>
+            <div class="login-error" id="loginError">Mot de passe incorrect</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <!-- Logo Vinci Facilities en SVG -->
+                <svg class="header-logo" viewBox="0 0 150 80" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Texte VINCI -->
+                    <text x="5" y="35" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="white" letter-spacing="-1">VINCI</text>
+                    <!-- Texte FACILITIES -->
+                    <text x="5" y="55" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="normal" fill="white" letter-spacing="2">FACILITIES</text>
+                </svg>
+                
+                <div class="header-title">
+                    <h1>Inventaire Maintenance</h1>
+                    <p>Gestion complète des stocks et outils</p>
+                </div>
+            </div>
+            <div class="sync-indicator" id="syncIndicator">
+                <div class="sync-dot" id="syncDot"></div>
+                <div>
+                    <div class="sync-text" id="syncText">Connecté</div>
+                    <div class="sync-time" id="syncTime">--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchTab('principal')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                Inventaire
+            </button>
+            <button class="main-tab" onclick="switchTab('sites')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+                Sites
+            </button>
+            <button class="main-tab" onclick="switchTab('outils')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+                Outils
+            </button>
+        </div>
+
+        <div id="principal" class="main-content active">
+            <div class="controls">
+                <div class="filter-group">
+                    <label>Recherche:</label>
+                    <input type="text" id="searchPrincipal" placeholder="Rechercher..." oninput="render()">
+                </div>
+                <button class="btn btn-primary" onclick="addArticle('principal')">+ Article</button>
+                <button class="btn btn-success" onclick="exportExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Export</button>
+            </div>
+            
+            <div class="metier-section">
+                <div class="metier-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Métiers
+                    </h3>
+                    <button class="btn btn-primary" onclick="showManageMetiersModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m6-12h-6m6 6h-6m6 6h-6M6 7h6M6 13h6M6 19h6"></path>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        Gérer les métiers
+                    </button>
+                </div>
+                <div class="metiers-grid" id="metiersGrid"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalPrincipal">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="lowPrincipal">0</div><div class="stat-label">Stock Faible</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Min</th><th>Actions</th></tr></thead>
+                    <tbody id="tablePrincipal"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sites" class="main-content">
+            <div class="controls">
+                <select id="filterSite" onchange="render()"><option value="all">Tous les sites</option></select>
+                <input type="text" id="searchSites" placeholder="Rechercher..." oninput="render()">
+                <button class="btn btn-primary" onclick="showAddSiteModal()">+ Nouveau Site</button>
+                <button class="btn btn-danger" onclick="showManageSitesModal()">🗑️ Gérer Sites</button>
+                <button class="btn btn-success" onclick="exportExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Export</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalSites">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="nbSites">0</div><div class="stat-label">Sites</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Site</th><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Actions</th></tr></thead>
+                    <tbody id="tableSites"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="outils" class="main-content">
+            <div class="controls">
+                <select id="filterTech" onchange="render()">
+                    <option value="all">Tous les techniciens</option>
+                </select>
+                <input type="text" id="searchOutils" placeholder="Rechercher..." oninput="render()">
+                <button class="btn btn-primary" onclick="addOutil()">+ Outil</button>
+                <button class="btn btn-warning" onclick="showManageTechModal()">👷 Gérer Techniciens</button>
+                <button class="btn btn-success" onclick="exportExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Export</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalOutils">0</div><div class="stat-label">Outils</div></div>
+                <div class="stat-card"><div class="stat-value" id="affectes">0</div><div class="stat-label">Affectés</div></div>
+                <div class="stat-card"><div class="stat-value" id="nbTechs">0</div><div class="stat-label">Techniciens</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Outil</th><th>Catégorie</th><th>Technicien</th><th>État</th><th>Actions</th></tr></thead>
+                    <tbody id="tableOutils"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close" onclick="closeModal()">×</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const PASSWORD = 'topaz';
+        let outilsAuthenticated = false;
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            if (input === PASSWORD) {
+                outilsAuthenticated = true;
+                document.getElementById('loginOverlay').style.display = 'none';
+                switchTab('outils');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        let data = {
+            inventoryPrincipal: [],
+            sites: {},
+            outils: [],
+            techniciens: [],
+            metiers: ['CVC', 'Électricité', 'Plomberie', 'Divers']
+        };
+
+        function save() {
+            localStorage.setItem('inventoryData', JSON.stringify(data));
+            updateSync('synced');
+        }
+
+        function load() {
+            const saved = localStorage.getItem('inventoryData');
+            if (saved) data = JSON.parse(saved);
+            
+            if (!data.techniciens) data.techniciens = [];
+            if (!data.metiers) data.metiers = ['CVC', 'Électricité', 'Plomberie', 'Divers'];
+            
+            updateSiteFilter();
+            updateTechFilter();
+            render();
+            updateSync('loaded');
+        }
+
+        function updateSync(status) {
+            const dot = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            const time = document.getElementById('syncTime');
+            const now = new Date();
+            time.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            if (status === 'syncing') {
+                dot.className = 'sync-dot syncing';
+                text.textContent = 'Synchronisation...';
+            } else if (status === 'synced' || status === 'loaded') {
+                dot.className = 'sync-dot';
+                text.textContent = 'Synchronisé';
+            }
+        }
+
+        function switchTab(tab) {
+            // Si l'utilisateur essaie d'accéder à l'onglet Outils sans être authentifié
+            if (tab === 'outils' && !outilsAuthenticated) {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('passwordInput').focus();
+                return;
+            }
+            
+            document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelector(`.main-tab[onclick*="${tab}"]`).classList.add('active');
+            }
+            document.getElementById(tab).classList.add('active');
+            render();
+        }
+
+        function updateSiteFilter() {
+            const filter = document.getElementById('filterSite');
+            filter.innerHTML = '<option value="all">Tous les sites</option>';
+            Object.keys(data.sites).sort().forEach(site => {
+                filter.innerHTML += `<option value="${site}">${site}</option>`;
+            });
+        }
+
+        function updateTechFilter() {
+            const filter = document.getElementById('filterTech');
+            filter.innerHTML = '<option value="all">Tous les techniciens</option>';
+            data.techniciens.sort().forEach(tech => {
+                filter.innerHTML += `<option value="${tech}">${tech}</option>`;
+            });
+        }
+
+        function render() {
+            renderPrincipal();
+            renderSites();
+            renderMetiers();
+            if (outilsAuthenticated) {
+                renderOutils();
+            }
+        }
+
+        function renderPrincipal() {
+            const search = document.getElementById('searchPrincipal').value.toLowerCase();
+            const filtered = data.inventoryPrincipal.filter(item =>
+                item.ref.toLowerCase().includes(search) || item.designation.toLowerCase().includes(search)
+            );
+            document.getElementById('tablePrincipal').innerHTML = filtered.map((item, idx) => `
+                <tr>
+                    <td><strong>${item.ref}</strong></td>
+                    <td>${item.designation}</td>
+                    <td><span class="badge badge-divers">${item.metier}</span></td>
+                    <td class="${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+                    <td>${item.stockMin}</td>
+                    <td>
+                        <button class="btn-small btn-add" onclick="modStock('principal', ${data.inventoryPrincipal.indexOf(item)}, 1)">+</button>
+                        <button class="btn-small btn-remove" onclick="modStock('principal', ${data.inventoryPrincipal.indexOf(item)}, -1)">-</button>
+                        <button class="btn-small btn-delete" onclick="delItem('principal', ${data.inventoryPrincipal.indexOf(item)})">×</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            const totalItems = data.inventoryPrincipal.length;
+            const lowStockItems = data.inventoryPrincipal.filter(i => i.stock < i.stockMin).length;
+            
+            document.getElementById('totalPrincipal').textContent = totalItems;
+            document.getElementById('totalPrincipal').className = 'stat-value';
+            
+            document.getElementById('lowPrincipal').textContent = lowStockItems;
+            document.getElementById('lowPrincipal').className = lowStockItems > 0 ? 'stat-value critical' : 'stat-value';
+        }
+
+        function renderMetiers() {
+            const metiersGrid = document.getElementById('metiersGrid');
+            if (!metiersGrid) return;
+            
+            const metiersHTML = data.metiers.map(metier => {
+                const count = data.inventoryPrincipal.filter(i => i.metier === metier).length;
+                return `
+                    <div class="metier-tag" onclick="filterByMetier('${metier}')">
+                        <div>
+                            <span class="metier-name">${metier}</span>
+                            <span class="metier-count">(${count})</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            metiersGrid.innerHTML = metiersHTML;
+        }
+
+        function filterByMetier(metier) {
+            document.getElementById('searchPrincipal').value = metier;
+            render();
+        }
+
+        function showManageMetiersModal() {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Gérer les Métiers';
+            const metiersList = data.metiers.map(metier => {
+                const count = data.inventoryPrincipal.filter(i => i.metier === metier).length;
+                return `
+                    <div class="tech-card">
+                        <div>
+                            <div class="tech-name">${metier}</div>
+                            <div class="site-count">${count} article(s)</div>
+                        </div>
+                        <button class="btn-icon" onclick="deleteMetier('${metier}')">×</button>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>Ajouter un métier</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input id="newMetierName" placeholder="Nom du métier" style="flex: 1;">
+                        <button class="btn btn-primary" onclick="addMetierFromModal()">Ajouter</button>
+                    </div>
+                </div>
+                <hr style="margin: 20px 0; border: none; border-top: 2px solid #e2e8f0;">
+                <div class="tech-list">
+                    ${metiersList || '<p style="text-align: center; color: #718096;">Aucun métier</p>'}
+                </div>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function addMetierFromModal() {
+            const name = document.getElementById('newMetierName').value.trim();
+            if (name && !data.metiers.includes(name)) {
+                data.metiers.push(name);
+                save();
+                showManageMetiersModal();
+                render();
+            } else if (data.metiers.includes(name)) {
+                alert('Ce métier existe déjà !');
+            }
+        }
+
+        function deleteMetier(metierName) {
+            const articlesCount = data.inventoryPrincipal.filter(i => i.metier === metierName).length;
+            if (confirm(`Supprimer le métier "${metierName}" ? ${articlesCount > 0 ? `${articlesCount} article(s) seront remis en "Divers".` : ''}`)) {
+                data.metiers = data.metiers.filter(m => m !== metierName);
+                // Remettre les articles en "Divers"
+                data.inventoryPrincipal.forEach(item => {
+                    if (item.metier === metierName) {
+                        item.metier = 'Divers';
+                    }
+                });
+                save();
+                render();
+                showManageMetiersModal();
+            }
+        }
+
+        function renderSites() {
+            const search = document.getElementById('searchSites').value.toLowerCase();
+            const siteFilter = document.getElementById('filterSite').value;
+            let items = [];
+            Object.keys(data.sites).forEach(site => {
+                if (siteFilter === 'all' || siteFilter === site) {
+                    data.sites[site].forEach((item, idx) => {
+                        if (item.ref.toLowerCase().includes(search) || item.designation.toLowerCase().includes(search)) {
+                            items.push({site, item, idx});
+                        }
+                    });
+                }
+            });
+            document.getElementById('tableSites').innerHTML = items.map(({site, item, idx}) => `
+                <tr>
+                    <td><strong>${site}</strong></td>
+                    <td>${item.ref}</td>
+                    <td>${item.designation}</td>
+                    <td><span class="badge badge-divers">${item.metier}</span></td>
+                    <td class="${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+                    <td>
+                        <button class="btn-small btn-add" onclick="modSiteStock('${site}', ${idx}, 1)">+</button>
+                        <button class="btn-small btn-remove" onclick="modSiteStock('${site}', ${idx}, -1)">-</button>
+                        <button class="btn-small btn-delete" onclick="delSiteItem('${site}', ${idx})">×</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            let total = 0;
+            Object.values(data.sites).forEach(site => total += site.length);
+            
+            const nbSites = Object.keys(data.sites).length;
+            
+            document.getElementById('totalSites').textContent = total;
+            document.getElementById('totalSites').className = 'stat-value';
+            
+            document.getElementById('nbSites').textContent = nbSites;
+            document.getElementById('nbSites').className = 'stat-value';
+        }
+
+        function renderOutils() {
+            const search = document.getElementById('searchOutils').value.toLowerCase();
+            const techFilter = document.getElementById('filterTech').value;
+            const filtered = data.outils.filter(o => {
+                const matchSearch = o.nom.toLowerCase().includes(search);
+                const matchTech = techFilter === 'all' || o.technicien === techFilter;
+                return matchSearch && matchTech;
+            });
+            document.getElementById('tableOutils').innerHTML = filtered.map((outil, idx) => `
+                <tr>
+                    <td><strong>${outil.nom}</strong></td>
+                    <td>${outil.categorie}</td>
+                    <td>
+                        <select onchange="assignTech(${data.outils.indexOf(outil)}, this.value)" style="padding: 5px; border-radius: 5px;">
+                            <option value="">Non affecté</option>
+                            ${data.techniciens.map(tech => `
+                                <option value="${tech}" ${outil.technicien === tech ? 'selected' : ''}>${tech}</option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td class="${outil.etat === 'Bon' ? 'stock-good' : 'stock-medium'}">${outil.etat}</td>
+                    <td>
+                        <button class="btn-small btn-delete" onclick="delOutil(${data.outils.indexOf(outil)})">×</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            const totalOutils = data.outils.length;
+            const affectes = data.outils.filter(o => o.technicien).length;
+            const nbTechs = data.techniciens.length;
+            
+            document.getElementById('totalOutils').textContent = totalOutils;
+            document.getElementById('totalOutils').className = 'stat-value';
+            
+            document.getElementById('affectes').textContent = affectes;
+            document.getElementById('affectes').className = 'stat-value';
+            
+            document.getElementById('nbTechs').textContent = nbTechs;
+            document.getElementById('nbTechs').className = 'stat-value';
+        }
+
+        function modStock(type, idx, qty) {
+            data.inventoryPrincipal[idx].stock = Math.max(0, data.inventoryPrincipal[idx].stock + qty);
+            render();
+            save();
+        }
+
+        function modSiteStock(site, idx, qty) {
+            data.sites[site][idx].stock = Math.max(0, data.sites[site][idx].stock + qty);
+            render();
+            save();
+        }
+
+        function delItem(type, idx) {
+            if (confirm('Supprimer cet article ?')) {
+                data.inventoryPrincipal.splice(idx, 1);
+                render();
+                save();
+            }
+        }
+
+        function delSiteItem(site, idx) {
+            if (confirm('Supprimer cet article ?')) {
+                data.sites[site].splice(idx, 1);
+                render();
+                save();
+            }
+        }
+
+        function delOutil(idx) {
+            if (confirm('Supprimer cet outil ?')) {
+                data.outils.splice(idx, 1);
+                render();
+                save();
+            }
+        }
+
+        function assignTech(idx, tech) {
+            data.outils[idx].technicien = tech;
+            render();
+            save();
+        }
+
+        function addArticle(type) {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Ajouter Article';
+            const metiersOptions = data.metiers.map(m => `<option value="${m}">${m}</option>`).join('');
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>Référence</label><input id="ref" required></div>
+                <div class="form-group"><label>Désignation</label><input id="designation" required></div>
+                <div class="form-group">
+                    <label>Métier</label>
+                    <select id="metier">
+                        ${metiersOptions}
+                    </select>
+                </div>
+                <div class="form-group"><label>Stock</label><input id="stock" type="number" value="0"></div>
+                <div class="form-group"><label>Stock Min</label><input id="stockMin" type="number" value="5"></div>
+                <div class="form-group"><label>Unité</label><input id="unit" value="pcs"></div>
+                <button class="btn btn-primary" onclick="saveArticle('${type}')">Ajouter</button>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function saveArticle(type) {
+            const item = {
+                ref: document.getElementById('ref').value,
+                designation: document.getElementById('designation').value,
+                metier: document.getElementById('metier').value,
+                stock: parseInt(document.getElementById('stock').value),
+                stockMin: parseInt(document.getElementById('stockMin').value),
+                unit: document.getElementById('unit').value
+            };
+            data.inventoryPrincipal.push(item);
+            closeModal();
+            render();
+            save();
+        }
+
+        function showAddSiteModal() {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Ajouter un Site';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>Nom du site</label>
+                    <input id="siteName" placeholder="Ex: Paris, Lyon, Marseille..." required>
+                </div>
+                <button class="btn btn-primary" onclick="addSiteFromModal()">Créer le site</button>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function addSiteFromModal() {
+            const name = document.getElementById('siteName').value.trim();
+            if (name && !data.sites[name]) {
+                data.sites[name] = [];
+                updateSiteFilter();
+                render();
+                save();
+                closeModal();
+            } else if (data.sites[name]) {
+                alert('Ce site existe déjà !');
+            }
+        }
+
+        function showManageSitesModal() {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Gérer les Sites';
+            const sitesList = Object.keys(data.sites).sort().map(site => `
+                <div class="site-card">
+                    <div>
+                        <div class="site-name">${site}</div>
+                        <div class="site-count">${data.sites[site].length} article(s)</div>
+                    </div>
+                    <button class="btn-small btn-delete" onclick="deleteSite('${site}')">Supprimer</button>
+                </div>
+            `).join('');
+            
+            document.getElementById('modalBody').innerHTML = `
+                <div class="site-list">
+                    ${sitesList || '<p style="text-align: center; color: #718096;">Aucun site</p>'}
+                </div>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function deleteSite(siteName) {
+            if (confirm(`Supprimer le site "${siteName}" et tous ses articles (${data.sites[siteName].length}) ?`)) {
+                delete data.sites[siteName];
+                updateSiteFilter();
+                render();
+                save();
+                showManageSitesModal();
+            }
+        }
+
+        function showManageTechModal() {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Gérer les Techniciens';
+            const techsList = data.techniciens.sort().map(tech => {
+                const outilsCount = data.outils.filter(o => o.technicien === tech).length;
+                return `
+                    <div class="tech-card">
+                        <div>
+                            <div class="tech-name">${tech}</div>
+                            <div class="site-count">${outilsCount} outil(s)</div>
+                        </div>
+                        <button class="btn-small btn-delete" onclick="deleteTech('${tech}')">×</button>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>Ajouter un technicien</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input id="newTechName" placeholder="Nom du technicien" style="flex: 1;">
+                        <button class="btn btn-primary" onclick="addTechFromModal()">Ajouter</button>
+                    </div>
+                </div>
+                <hr style="margin: 20px 0; border: none; border-top: 2px solid #e2e8f0;">
+                <div class="tech-list">
+                    ${techsList || '<p style="text-align: center; color: #718096;">Aucun technicien</p>'}
+                </div>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function addTechFromModal() {
+            const name = document.getElementById('newTechName').value.trim();
+            if (name && !data.techniciens.includes(name)) {
+                data.techniciens.push(name);
+                updateTechFilter();
+                save();
+                showManageTechModal();
+            } else if (data.techniciens.includes(name)) {
+                alert('Ce technicien existe déjà !');
+            }
+        }
+
+        function deleteTech(techName) {
+            const outilsCount = data.outils.filter(o => o.technicien === techName).length;
+            if (confirm(`Supprimer le technicien "${techName}" ? ${outilsCount > 0 ? `${outilsCount} outil(s) seront désaffectés.` : ''}`)) {
+                data.techniciens = data.techniciens.filter(t => t !== techName);
+                data.outils.forEach(o => {
+                    if (o.technicien === techName) o.technicien = '';
+                });
+                updateTechFilter();
+                render();
+                save();
+                showManageTechModal();
+            }
+        }
+
+        function addOutil() {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalTitle').textContent = 'Ajouter un Outil';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>Nom de l'outil</label><input id="outilNom" required></div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <input id="outilCategorie" value="Autre">
+                </div>
+                <div class="form-group">
+                    <label>Technicien (optionnel)</label>
+                    <select id="outilTech">
+                        <option value="">Non affecté</option>
+                        ${data.techniciens.map(tech => `<option value="${tech}">${tech}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>État</label>
+                    <select id="outilEtat">
+                        <option value="Bon">Bon</option>
+                        <option value="Moyen">Moyen</option>
+                        <option value="Mauvais">Mauvais</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="saveOutil()">Ajouter</button>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function saveOutil() {
+            const outil = {
+                nom: document.getElementById('outilNom').value,
+                categorie: document.getElementById('outilCategorie').value,
+                technicien: document.getElementById('outilTech').value,
+                etat: document.getElementById('outilEtat').value,
+                serie: '',
+                dateAttribution: new Date().toLocaleDateString()
+            };
+            data.outils.push(outil);
+            closeModal();
+            render();
+            save();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function exportExcel() {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data.inventoryPrincipal.map(i => ({
+                Référence: i.ref, Désignation: i.designation, Métier: i.metier, Stock: i.stock, Min: i.stockMin, Unité: i.unit
+            })));
+            XLSX.utils.book_append_sheet(wb, ws, 'Inventaire');
+            XLSX.writeFile(wb, 'inventaire-vinci.xlsx');
+        }
+
+        window.onclick = e => { if (e.target.id === 'modal') closeModal(); };
+        
+        // Cacher l'overlay au démarrage et charger les données
+        document.getElementById('loginOverlay').style.display = 'none';
+        load();
+    </script>
+</body>
+</html>
