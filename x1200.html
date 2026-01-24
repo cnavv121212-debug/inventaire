@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Vinci Facilities</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #004489; min-height: 100vh; padding: 20px; }
+        
+        .welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); display: flex; align-items: center; justify-content: center; z-index: 3000; }
+        .welcome-screen.hidden { display: none; }
+        .welcome-container { background: white; border-radius: 25px; box-shadow: 0 25px 80px rgba(0,0,0,0.3); max-width: 450px; width: 90%; padding: 50px 40px; text-align: center; animation: slideIn 0.6s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .welcome-logo { width: 100px; height: 100px; margin: 0 auto 25px; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,68,137,0.3); font-size: 48px; }
+        .welcome-title { font-size: 2em; font-weight: 900; color: #2d3748; margin-bottom: 10px; }
+        .welcome-subtitle { color: #718096; font-size: 1em; margin-bottom: 35px; }
+        
+        .login-form { text-align: left; }
+        .login-input-group { margin-bottom: 20px; }
+        .login-input-group label { display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; }
+        .login-input-group input { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1em; }
+        .login-input-group input:focus { outline: none; border-color: #004489; box-shadow: 0 0 0 4px rgba(0,68,137,0.1); }
+        
+        .remember-me { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
+        .remember-me input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .remember-me label { color: #718096; font-size: 0.9em; cursor: pointer; }
+        
+        .login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); color: white; border: none; border-radius: 12px; font-size: 1.1em; font-weight: 700; cursor: pointer; }
+        .login-btn:hover { opacity: 0.9; }
+        
+        .login-error-msg { background: #fee; color: #e53e3e; padding: 12px; border-radius: 10px; margin-top: 15px; display: none; }
+        .login-error-msg.show { display: block; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .header { background: #2d3748; color: white; padding: 25px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .header-title h1 { font-size: 1.8em; }
+        .header-title p { font-size: 0.9em; color: rgba(255,255,255,0.8); margin-top: 5px; }
+        
+        .user-info { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.1); padding: 10px 18px; border-radius: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; }
+        .user-name { color: white; font-weight: 600; }
+        
+        .logout-btn { background: rgba(229,62,62,0.1); border: 2px solid #e53e3e; color: #e53e3e; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .logout-btn:hover { background: #e53e3e; color: white; }
+        
+        .sync-indicator { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 25px; }
+        .sync-dot { width: 12px; height: 12px; border-radius: 50%; background: #48bb78; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #4299e1; animation: spin 1s linear infinite; }
+        .sync-dot.error { background: #f56565; }
+        .sync-text { color: white; font-size: 14px; font-weight: 600; }
+        .btn-sync { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: white; font-size: 18px; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .tabs { display: flex; background: #2d3748; }
+        .tab { flex: 1; padding: 20px; cursor: pointer; color: #a0aec0; font-weight: 700; border: none; background: none; }
+        .tab.active { background: #004489; color: white; }
+        .content { display: none; }
+        .content.active { display: block; }
+        
+        .controls { padding: 25px; background: #f7fafc; display: flex; gap: 15px; flex-wrap: wrap; }
+        select, input { padding: 10px 15px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; }
+        select:focus, input:focus { outline: none; border-color: #004489; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: #004489; color: white; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-warning { background: #ed8936; color: white; }
+        .btn-danger { background: #e53e3e; color: white; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: #edf2f7; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #718096; }
+        .stat-value.critical { color: #e53e3e; }
+        .stat-label { color: #718096; margin-top: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 25px; }
+        thead { background: #2d3748; color: white; }
+        th, td { padding: 15px; text-align: left; }
+        tbody tr:hover { background: #f7fafc; }
+        
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; background: #e2e8f0; }
+        .stock-low { color: #e53e3e; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+        
+        .btn-small { padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-add { background: #48bb78; color: white; }
+        .btn-remove { background: #f56565; color: white; }
+        .btn-delete { background: #e53e3e; color: white; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .close { font-size: 28px; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; }
+        
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #cbd5e0; border-radius: 8px; }
+        .login-error { color: #e53e3e; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-container">
+            <div class="welcome-logo">🏢</div>
+            <h1 class="welcome-title">VINCI FACILITIES</h1>
+            <p class="welcome-subtitle">Gestion d'inventaire maintenance</p>
+            
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="login-input-group">
+                    <label>Nom d'utilisateur</label>
+                    <input type="text" id="loginUsername" placeholder="user1, user2, user3..." required>
+                </div>
+                
+                <div class="login-input-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                </div>
+                
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Se souvenir de moi</label>
+                </div>
+                
+                <button type="submit" class="login-btn">Se connecter</button>
+                
+                <div class="login-error-msg" id="loginErrorMain">Identifiants incorrects</div>
+            </form>
+        </div>
+    </div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🔒 Accès Outils</h2>
+            <input type="password" id="passwordInput" placeholder="Mot de passe" onkeypress="if(event.key==='Enter') checkPassword()">
+            <button class="btn btn-primary" onclick="checkPassword()">Connexion</button>
+            <div class="login-error" id="loginError">Mot de passe incorrect</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <h1>🏢 VINCI FACILITIES</h1>
+                <p>Inventaire Maintenance - Synchronisé</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-name" id="userName">Utilisateur</div>
+                </div>
+                <div class="sync-indicator">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <div class="sync-text" id="syncText">Connecté</div>
+                    <button class="btn-sync" onclick="manualSync()">⟳</button>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <span>🚪</span> Déconnexion
+                </button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('principal')">📦 Inventaire</button>
+            <button class="tab" onclick="switchTab('itinerance')">🏢 Sites</button>
+            <button class="tab" onclick="switchTab('outils')">🔧 Outils</button>
+        </div>
+
+        <div id="principal" class="content active">
+            <div class="controls">
+                <input type="text" id="searchPrincipal" placeholder="Rechercher..." oninput="render()" style="flex: 1;">
+                <button class="btn btn-primary" onclick="addArticle()">+ Ajouter</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalPrincipal">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="lowPrincipal">0</div><div class="stat-label">Stock Faible</div></div>
+            </div>
+            <table>
+                <thead><tr><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Min</th><th>Actions</th></tr></thead>
+                <tbody id="tablePrincipal"></tbody>
+            </table>
+        </div>
+
+        <div id="itinerance" class="content">
+            <div class="controls">
+                <select id="filterSite" onchange="render()"><option value="all">Tous les sites</option></select>
+                <input type="text" id="searchSites" placeholder="Rechercher..." oninput="render()" style="flex: 1;">
+                <button class="btn btn-primary" onclick="addSiteArticle()">+ Article</button>
+                <button class="btn btn-warning" onclick="addSite()">+ Site</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalSites">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="nbSites">0</div><div class="stat-label">Sites</div></div>
+            </div>
+            <table>
+                <thead><tr><th>Site</th><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Actions</th></tr></thead>
+                <tbody id="tableSites"></tbody>
+            </table>
+        </div>
+
+        <div id="outils" class="content">
+            <div class="controls">
+                <select id="filterTech" onchange="render()"><option value="all">Tous</option></select>
+                <input type="text" id="searchOutils" placeholder="Rechercher..." oninput="render()" style="flex: 1;">
+                <button class="btn btn-primary" onclick="addOutil()">+ Outil</button>
+                <button class="btn btn-warning" onclick="addTech()">+ Technicien</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalOutils">0</div><div class="stat-label">Outils</div></div>
+                <div class="stat-card"><div class="stat-value" id="affectes">0</div><div class="stat-label">Affectés</div></div>
+            </div>
+            <table>
+                <thead><tr><th>Outil</th><th>Catégorie</th><th>Technicien</th><th>État</th><th>Actions</th></tr></thead>
+                <tbody id="tableOutils"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close" onclick="closeModal()">×</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO92A1V1Nf94JM8SoMqZq2yiNmeYG-b6_LcJ6M7VdJVbRSbITvfSIxMLn-nAcw20Xd/exec';
+const SPREADSHEET_ID = '1yM_PcLyyQ045lRmsYdtd1o-UX9D6m5f4U_DlSSS4tLU';
+const PASSWORD = 'topaz';
+
+let outilsAuth = false;
+let currentUser = null;
+
+const users = {
+    'user1': 'mimi',
+    'user2': 'titi',
+    'user3': 'loulou',
+    'user4': 'lili',
+    'user5': 'tictac'
+};
+
+let data = {
+    inventoryPrincipal: [],
+    sites: {},
+    outils: [],
+    techniciens: [],
+    metiers: ['CVC', 'Électricité', 'Plomberie', 'Divers']
+};
+
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    if (users[username] && users[username] === password) {
+        currentUser = { username: username };
+        
+        if (rememberMe) {
+            localStorage.setItem('rememberedUser', JSON.stringify(currentUser));
+        }
+        
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+    } else {
+        document.getElementById('loginErrorMain').classList.add('show');
+        setTimeout(() => document.getElementById('loginErrorMain').classList.remove('show'), 3000);
+    }
+}
+
+function handleLogout() {
+    if (confirm('Voulez-vous vous déconnecter ?')) {
+        save();
+        currentUser = null;
+        sessionStorage.removeItem('currentUser');
+        data = {inventoryPrincipal: [], sites: {}, outils: [], techniciens: [], metiers: ['CVC', 'Électricité', 'Plomberie', 'Divers']};
+        document.getElementById('welcomeScreen').classList.remove('hidden');
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+    }
+}
+
+function checkAutoLogin() {
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) {
+        currentUser = JSON.parse(sessionUser);
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+        return;
+    }
+    
+    const rememberedUser = localStorage.getItem('rememberedUser');
+    if (rememberedUser) {
+        currentUser = JSON.parse(rememberedUser);
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+    }
+}
+
+function initializeApp() {
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    userName.textContent = currentUser.username;
+    userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+    loadUserData();
+}
+
+async function loadUserData() {
+    if (!currentUser) return;
+    
+    try {
+        updateSync('syncing');
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=load&user=' + currentUser.username);
+        const result = await response.json();
+        
+        if (result && !result.error) {
+            data = result;
+            localStorage.setItem('vinci_' + currentUser.username, JSON.stringify(data));
+            console.log('✅ Données chargées depuis Google Sheets');
+        } else {
+            const saved = localStorage.getItem('vinci_' + currentUser.username);
+            if (saved) data = JSON.parse(saved);
+        }
+        updateSync('synced');
+    } catch(e) {
+        const saved = localStorage.getItem('vinci_' + currentUser.username);
+        if (saved) data = JSON.parse(saved);
+        updateSync('error');
+    }
+    
+    updateFilters();
+    render();
+}
+
+function checkPassword() {
+    if (document.getElementById('passwordInput').value === PASSWORD) {
+        outilsAuth = true;
+        document.getElementById('loginOverlay').style.display = 'none';
+        render();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+async function save() {
+    if (!currentUser) return;
+    
+    localStorage.setItem('vinci_' + currentUser.username, JSON.stringify(data));
+    
+    try {
+        updateSync('syncing');
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'save',
+                user: currentUser.username,
+                payload: data
+            })
+        });
+        updateSync('synced');
+        console.log('✅ Sauvegardé');
+    } catch(e) {
+        updateSync('error');
+        console.error('Erreur:', e);
+    }
+}
+
+async function manualSync() {
+    const btn = document.querySelector('.btn-sync');
+    btn.style.animation = 'spin 1s linear infinite';
+    await save();
+    await loadUserData();
+    btn.style.animation = '';
+}
+
+function updateSync(status) {
+    const dot = document.getElementById('syncDot');
+    const text = document.getElementById('syncText');
+    if (status === 'syncing') {
+        dot.className = 'sync-dot syncing';
+        text.textContent = 'Sync...';
+    } else if (status === 'synced') {
+        dot.className = 'sync-dot';
+        text.textContent = 'Synchronisé';
+    } else {
+        dot.className = 'sync-dot error';
+        text.textContent = 'Erreur';
+    }
+}
+
+function switchTab(tab) {
+    if (tab === 'outils' && !outilsAuth) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return;
+    }
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab).classList.add('active');
+    render();
+}
+
+function updateFilters() {
+    const fs = document.getElementById('filterSite');
+    fs.innerHTML = '<option value="all">Tous</option>';
+    Object.keys(data.sites).sort().forEach(s => fs.innerHTML += `<option value="${s}">${s}</option>`);
+    
+    const ft = document.getElementById('filterTech');
+    ft.innerHTML = '<option value="all">Tous</option>';
+    data.techniciens.sort().forEach(t => ft.innerHTML += `<option value="${t}">${t}</option>`);
+}
+
+function render() {
+    renderPrincipal();
+    renderSites();
+    if (outilsAuth) renderOutils();
+}
+
+function renderPrincipal() {
+    const search = document.getElementById('searchPrincipal').value.toLowerCase();
+    const filtered = data.inventoryPrincipal.filter(i => 
+        i.ref.toLowerCase().includes(search) || 
+        i.designation.toLowerCase().includes(search)
+    );
+    
+    document.getElementById('tablePrincipal').innerHTML = filtered.map((item, idx) => {
+        const realIdx = data.inventoryPrincipal.indexOf(item);
+        return `
+        <tr>
+            <td><strong>${item.ref}</strong></td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>${item.stockMin}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modStock(${realIdx}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modStock(${realIdx}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delItem(${realIdx})">×</button>
+            </td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('totalPrincipal').textContent = data.inventoryPrincipal.length;
+    const low = data.inventoryPrincipal.filter(i => i.stock < i.stockMin).length;
+    document.getElementById('lowPrincipal').textContent = low;
+    document.getElementById('lowPrincipal').className = low > 0 ? 'stat-value critical' : 'stat-value';
+}
+
+function renderSites() {
+    const search = document.getElementById('searchSites').value.toLowerCase();
+    const siteFilter = document.getElementById('filterSite').value;
+    let items = [];
+    
+    Object.keys(data.sites).forEach(site => {
+        if (siteFilter === 'all' || siteFilter === site) {
+            data.sites[site].forEach((item, idx) => {
+                if (item.ref.toLowerCase().includes(search) || item.designation.toLowerCase().includes(search)) {
+                    items.push({site, item, idx});
+                }
+            });
+        }
+    });
+    
+    document.getElementById('tableSites').innerHTML = items.map(({site, item, idx}) => `
+        <tr>
+            <td><strong>${site}</strong></td>
+            <td>${item.ref}</td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < (item.stockMin||0) ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modSiteStock('${site}', ${idx}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modSiteStock('${site}', ${idx}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delSiteItem('${site}', ${idx})">×</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    let total = 0;
+    Object.values(data.sites).forEach(s => total += s.length);
+    document.getElementById('totalSites').textContent = total;
+    document.getElementById('nbSites').textContent = Object.keys(data.sites).length;
+}
+
+function renderOutils() {
+    const search = document.getElementById('searchOutils').value.toLowerCase();
+    const techFilter = document.getElementById('filterTech').value;
+    const filtered = data.outils.filter(o => {
+        const matchSearch = o.nom.toLowerCase().includes(search);
+        const matchTech = techFilter === 'all' || o.technicien === techFilter;
+        return matchSearch && matchTech;
+    });
+    
+    document.getElementById('tableOutils').innerHTML = filtered.map(o => {
+        const realIdx = data.outils.indexOf(o);
+        return `
+        <tr>
+            <td><strong>${o.nom}</strong></td>
+            <td>${o.categorie}</td>
+            <td>
+                <select onchange="assignTech(${realIdx}, this.value)" style="padding: 5px;">
+                    <option value="">Non affecté</option>
+                    ${data.techniciens.map(t => `<option value="${t}" ${o.technicien === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+            </td>
+            <td class="${o.etat === 'Bon' ? 'stock-good' : ''}">${o.etat}</td>
+            <td><button class="btn-small btn-delete" onclick="delOutil(${realIdx})">×</button></td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('totalOutils').textContent = data.outils.length;
+    document.getElementById('affectes').textContent = data.outils.filter(o => o.technicien).length;
+}
