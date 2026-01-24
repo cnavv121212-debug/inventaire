@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Maintenance - Vinci Facilities</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #004489; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: #2d3748; color: white; padding: 25px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .header-left { display: flex; align-items: center; gap: 30px; }
+        .header-logo { height: 55px; width: auto; }
+        .header-title h1 { font-size: 1.8em; margin: 0; }
+        .header-title p { font-size: 0.9em; color: rgba(255,255,255,0.8); margin-top: 5px; }
+        .sync-indicator { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 25px; }
+        .sync-dot { width: 12px; height: 12px; border-radius: 50%; background: #48bb78; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #4299e1; animation: spin 1s linear infinite; }
+        .sync-dot.error { background: #f56565; }
+        .sync-text { color: white; font-size: 14px; font-weight: 600; }
+        .sync-time { color: rgba(255,255,255,0.7); font-size: 12px; }
+        .btn-sync { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; transition: all 0.3s; margin-left: 10px; }
+        .btn-sync:hover { background: rgba(255,255,255,0.3); }
+        .btn-sync.spinning { animation: spin 1s linear infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .main-tabs { display: flex; background: #2d3748; border-bottom: 3px solid #004489; }
+        .main-tab { flex: 1; padding: 20px; cursor: pointer; color: #a0aec0; font-weight: 700; font-size: 1.1em; border: none; background: none; transition: all 0.3s; }
+        .main-tab:hover { background: #1a202c; color: white; }
+        .main-tab.active { background: #004489; color: white; }
+        .main-content { display: none; }
+        .main-content.active { display: block; }
+        .controls { padding: 25px; background: #f7fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; flex-wrap: wrap; }
+        .filter-group { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 250px; }
+        .filter-group label { font-weight: 600; color: #2d3748; }
+        select, input { padding: 10px 15px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; flex: 1; }
+        select:focus, input:focus { outline: none; border-color: #004489; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: #004489; color: white; }
+        .btn-primary:hover { background: #1E4F93; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-warning { background: #2d3748; color: white; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: #edf2f7; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #718096; }
+        .stat-value.critical { color: #E31E24; }
+        .stat-label { color: #718096; margin-top: 5px; }
+        .table-container { padding: 25px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #2d3748; color: white; }
+        th { padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+        tbody tr:hover { background: #f7fafc; }
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; background: #e2e8f0; color: #2d3748; }
+        .stock-low { color: #f56565; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+        .btn-small { padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-add { background: #48bb78; color: white; }
+        .btn-remove { background: #f56565; color: white; }
+        .btn-delete { background: #e53e3e; color: white; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
+        .modal-content { background: white; margin: 3% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .close { font-size: 28px; cursor: pointer; color: #718096; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; min-width: 350px; }
+        .login-box h2 { margin-bottom: 25px; color: #2d3748; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #cbd5e0; border-radius: 8px; }
+        .login-error { color: #e53e3e; margin-top: 10px; display: none; }
+        .metier-section { padding: 25px; background: #f7fafc; }
+        .metier-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .metiers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .metier-tag { background: white; padding: 10px 15px; border-radius: 8px; border: 2px solid #e2e8f0; cursor: pointer; }
+        .metier-tag:hover { border-color: #004489; }
+    </style>
+</head>
+<body>
+    <div class="login-overlay" id="loginOverlay" style="display:none;">
+        <div class="login-box">
+            <h2>🔒 Connexion requise</h2>
+            <input type="password" id="passwordInput" placeholder="Mot de passe" onkeypress="if(event.key==='Enter') checkPassword()">
+            <button class="btn btn-primary" onclick="checkPassword()">Se connecter</button>
+            <div class="login-error" id="loginError">Mot de passe incorrect</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <svg class="header-logo" viewBox="0 0 150 80">
+                    <text x="5" y="35" font-family="Arial" font-size="32" font-weight="bold" fill="white">VINCI</text>
+                    <text x="5" y="55" font-family="Arial" font-size="13" fill="white">FACILITIES</text>
+                </svg>
+                <div class="header-title">
+                    <h1>Inventaire Maintenance</h1>
+                    <p>Synchronisé avec Google Sheets</p>
+                </div>
+            </div>
+            <div class="sync-indicator">
+                <div class="sync-dot" id="syncDot"></div>
+                <div>
+                    <div class="sync-text" id="syncText">Connecté</div>
+                    <div class="sync-time" id="syncTime">--:--</div>
+                </div>
+                <button class="btn-sync" onclick="manualSync()">⟳</button>
+            </div>
+        </div>
+
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchTab('principal')">📦 Inventaire</button>
+            <button class="main-tab" onclick="switchTab('itinerance')">🏢 Itinérance</button>
+            <button class="main-tab" onclick="switchTab('outils')">🔧 Outils</button>
+        </div>
+
+        <div id="principal" class="main-content active">
+            <div class="controls">
+                <div class="filter-group">
+                    <label>Recherche:</label>
+                    <input type="text" id="searchPrincipal" placeholder="Rechercher..." oninput="render()">
+                </div>
+                <button class="btn btn-primary" onclick="addArticle()">+ Article</button>
+                <button class="btn btn-success" onclick="exportExcel()">📥 Export</button>
+            </div>
+            
+            <div class="metier-section">
+                <div class="metier-header">
+                    <h3>📋 Métiers</h3>
+                </div>
+                <div class="metiers-grid" id="metiersGrid"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalPrincipal">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="lowPrincipal">0</div><div class="stat-label">Stock Faible</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Min</th><th>Actions</th></tr></thead>
+                    <tbody id="tablePrincipal"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="itinerance" class="main-content">
+            <div class="controls">
+                <select id="filterSite" onchange="render()"><option value="all">Tous les sites</option></select>
+                <input type="text" id="searchSites" placeholder="Rechercher..." oninput="render()">
+                <button class="btn btn-primary" onclick="addSiteArticle()">+ Article</button>
+                <button class="btn btn-warning" onclick="addSite()">+ Site</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalSites">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="nbSites">0</div><div class="stat-label">Sites</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Site</th><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Actions</th></tr></thead>
+                    <tbody id="tableSites"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="outils" class="main-content">
+            <div class="controls">
+                <select id="filterTech" onchange="render()"><option value="all">Tous les techniciens</option></select>
+                <input type="text" id="searchOutils" placeholder="Rechercher..." oninput="render()">
+                <button class="btn btn-primary" onclick="addOutil()">+ Outil</button>
+                <button class="btn btn-warning" onclick="addTech()">+ Technicien</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalOutils">0</div><div class="stat-label">Outils</div></div>
+                <div class="stat-card"><div class="stat-value" id="affectes">0</div><div class="stat-label">Affectés</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Outil</th><th>Catégorie</th><th>Technicien</th><th>État</th><th>Actions</th></tr></thead>
+                    <tbody id="tableOutils"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close" onclick="closeModal()">×</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaO7BvZgd23jPj5Nn3DGcN1GkZAufvFDCljw7Y3v6HkTze-EF1UShdl1jmeH4s4dy7/exec';
+const PASSWORD = 'topaz';
+let outilsAuthenticated = false;
+let data = {inventoryPrincipal: [], sites: {}, outils: [], techniciens: [], metiers: ['CVC', 'Électricité', 'Plomberie', 'Divers']};
+
+function checkPassword() {
+    if (document.getElementById('passwordInput').value === PASSWORD) {
+        outilsAuthenticated = true;
+        document.getElementById('loginOverlay').style.display = 'none';
+        switchTab('outils');
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+async function save() {
+    localStorage.setItem('inv', JSON.stringify(data));
+    try {
+        updateSync('syncing');
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({action: 'save', payload: data})
+        });
+        updateSync('synced');
+    } catch(e) { updateSync('error'); }
+}
+
+async function load() {
+    try {
+        updateSync('syncing');
+        const r = await fetch(GOOGLE_SCRIPT_URL + '?action=load');
+        const result = await r.json();
+        if (result && !result.error) data = result;
+        else {
+            const saved = localStorage.getItem('inv');
+            if (saved) data = JSON.parse(saved);
+        }
+        updateSync('synced');
+    } catch(e) {
+        const saved = localStorage.getItem('inv');
+        if (saved) data = JSON.parse(saved);
+        updateSync('error');
+    }
+    updateSiteFilter();
+    updateTechFilter();
+    render();
+}
+
+async function manualSync() {
+    const btn = document.querySelector('.btn-sync');
+    btn.classList.add('spinning');
+    await save();
+    await load();
+    btn.classList.remove('spinning');
+}
+
+function updateSync(status) {
+    const dot = document.getElementById('syncDot');
+    const text = document.getElementById('syncText');
+    const time = document.getElementById('syncTime');
+    const now = new Date();
+    time.textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    if (status === 'syncing') {
+        dot.className = 'sync-dot syncing';
+        text.textContent = 'Sync...';
+    } else if (status === 'synced') {
+        dot.className = 'sync-dot';
+        text.textContent = 'Synchronisé';
+    } else {
+        dot.className = 'sync-dot error';
+        text.textContent = 'Erreur';
+    }
+}
+
+function switchTab(tab) {
+    if (tab === 'outils' && !outilsAuthenticated) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return;
+    }
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab).classList.add('active');
+    render();
+}
+
+function updateSiteFilter() {
+    const f = document.getElementById('filterSite');
+    f.innerHTML = '<option value="all">Tous</option>';
+    Object.keys(data.sites).sort().forEach(s => f.innerHTML += `<option value="${s}">${s}</option>`);
+}
+
+function updateTechFilter() {
+    const f = document.getElementById('filterTech');
+    f.innerHTML = '<option value="all">Tous</option>';
+    data.techniciens.sort().forEach(t => f.innerHTML += `<option value="${t}">${t}</option>`);
+}
+
+function render() {
+    renderPrincipal();
+    renderSites();
+    renderMetiers();
+    if (outilsAuthenticated) renderOutils();
+}
+
+function renderPrincipal() {
+    const search = document.getElementById('searchPrincipal').value.toLowerCase();
+    const filtered = data.inventoryPrincipal.filter(i => i.ref.toLowerCase().includes(search) || i.designation.toLowerCase().includes(search));
+    document.getElementById('tablePrincipal').innerHTML = filtered.map((item, idx) => `
+        <tr>
+            <td><strong>${item.ref}</strong></td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>${item.stockMin}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modStock(${data.inventoryPrincipal.indexOf(item)}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modStock(${data.inventoryPrincipal.indexOf(item)}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delItem(${data.inventoryPrincipal.indexOf(item)})">×</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('totalPrincipal').textContent = data.inventoryPrincipal.length;
+    const low = data.inventoryPrincipal.filter(i => i.stock < i.stockMin).length;
+    document.getElementById('lowPrincipal').textContent = low;
+    document.getElementById('lowPrincipal').className = low > 0 ? 'stat-value critical' : 'stat-value';
+}
+
+function renderMetiers() {
+    const grid = document.getElementById('metiersGrid');
+    grid.innerHTML = data.metiers.map(m => {
+        const count = data.inventoryPrincipal.filter(i => i.metier === m).length;
+        return `<div class="metier-tag" onclick="filterMetier('${m}')">${m} (${count})</div>`;
+    }).join('');
+}
+
+function filterMetier(m) {
+    document.getElementById('searchPrincipal').value = m;
+    render();
+}
+
+function renderSites() {
+    const search = document.getElementById('searchSites').value.toLowerCase();
+    const siteFilter = document.getElementById('filterSite').value;
+    let items = [];
+    Object.keys(data.sites).forEach(site => {
+        if (siteFilter === 'all' || siteFilter === site) {
+            data.sites[site].forEach((item, idx) => {
+                if (item.ref.toLowerCase().includes(search) || item.designation.toLowerCase().includes(search)) {
+                    items.push({site, item, idx});
+                }
+            });
+        }
+    });
+    document.getElementById('tableSites').innerHTML = items.map(({site, item, idx}) => `
+        <tr>
+            <td><strong>${site}</strong></td>
+            <td>${item.ref}</td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < (item.stockMin||0) ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modSiteStock('${site}', ${idx}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modSiteStock('${site}', ${idx}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delSiteItem('${site}', ${idx})">×</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    let total = 0;
+    Object.values(data.sites).forEach(s => total += s.length);
+    document.getElementById('totalSites').textContent = total;
+    document.getElementById('nbSites').textContent = Object.keys(data.sites).length;
+}
+
+function renderOutils() {
+    const search = document.getElementById('searchOutils').value.toLowerCase();
+    const techFilter = document.getElementById('filterTech').value;
+    const filtered = data.outils.filter(o => {
+        const matchSearch = o.nom.toLowerCase().includes(search);
+        const matchTech = techFilter === 'all' || o.technicien === techFilter;
+        return matchSearch && matchTech;
+    });
+    document.getElementById('tableOutils').innerHTML = filtered.map((o, idx) => `
+        <tr>
+            <td><strong>${o.nom}</strong></td>
+            <td>${o.categorie}</td>
+            <td>
+                <select onchange="assignTech(${data.outils.indexOf(o)}, this.value)">
+                    <option value="">Non affecté</option>
+                    ${data.techniciens.map(t => `<option value="${t}" ${o.technicien === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+            </td>
+            <td class="${o.etat === 'Bon' ? 'stock-good' : ''}">${o.etat}</td>
+            <td><button class="btn-small btn-delete" onclick="delOutil(${data.outils.indexOf(o)})">×</button></td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('totalOutils').textContent = data.outils.length;
+    document.getElementById('affectes').textContent = data.outils.filter(o => o.technicien).length;
+}
+
+function modStock(idx, qty) {
+    data.inventoryPrincipal[idx].stock = Math.max(0, data.inventoryPrincipal[idx].stock + qty);
+    render();
+    save();
+}
+
+function modSiteStock(site, idx, qty) {
+    data.sites[site][idx].stock = Math.max(0, data.sites[site][idx].stock + qty);
+    render();
+    save();
+}
+
+function delItem(idx) {
+    if (confirm('Supprimer ?')) {
+        data.inventoryPrincipal.splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function delSiteItem(site, idx) {
+    if (confirm('Supprimer ?')) {
+        data.sites[site].splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function delOutil(idx) {
+    if (confirm('Supprimer ?')) {
+        data.outils.splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function assignTech(idx, tech) {
+    data.outils[idx].technicien = tech;
+    render();
+    save();
+}
+
+function addArticle() {
+    document.getElementById('modalTitle').textContent = 'Ajouter Article';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Référence</label><input id="ref"></div>
+        <div class="form-group"><label>Désignation</label><input id="designation"></div>
+        <div class="form-group"><label>Métier</label><select id="metier">${data.metiers.map(m => `<option>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Stock</label><input id="stock" type="number" value="0"></div>
+        <div class="form-group"><label>Min</label><input id="stockMin" type="number" value="5"></div>
+        <button class="btn btn-primary" onclick="saveArticle()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveArticle() {
+    data.inventoryPrincipal.push({
+        ref: document.getElementById('ref').value,
+        designation: document.getElementById('designation').value,
+        metier: document.getElementById('metier').value,
+        stock: +document.getElementById('stock').value,
+        stockMin: +document.getElementById('stockMin').value,
+        unit: 'pcs'
+    });
+    closeModal();
+    render();
+    save();
+}
+
+function addSite() {
+    const name = prompt('Nom du site:');
+    if (name && !data.sites[name]) {
+        data.sites[name] = [];
+        updateSiteFilter();
+        save();
+    }
+}
+
+function addSiteArticle() {
+    if (Object.keys(data.sites).length === 0) return alert('Créez un site d\'abord !');
+    document.getElementById('modalTitle').textContent = 'Ajouter Article au Site';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Site</label><select id="targetSite">${Object.keys(data.sites).map(s => `<option>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Référence</label><input id="siteRef"></div>
+        <div class="form-group"><label>Désignation</label><input id="siteDes"></div>
+        <div class="form-group"><label>Métier</label><select id="siteMetier">${data.metiers.map(m => `<option>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Stock</label><input id="siteStock" type="number" value="0"></div>
+        <button class="btn btn-primary" onclick="saveSiteArticle()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveSiteArticle() {
+    const site = document.getElementById('targetSite').value;
+    data.sites[site].push({
+        ref: document.getElementById('siteRef').value,
+        designation: document.getElementById('siteDes').value,
+        metier: document.getElementById('siteMetier').value,
+        stock: +document.getElementById('siteStock').value,
+        stockMin: 5,
+        unit: 'pcs'
+    });
+    closeModal();
+    render();
+    save();
+}
+
+function addOutil() {
+    document.getElementById('modalTitle').textContent = 'Ajouter Outil';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Nom</label><input id="outilNom"></div>
+        <div class="form-group"><label>Catégorie</label><input id="outilCat" value="Autre"></div>
+        <div class="form-group"><label>Technicien</label><select id="outilTech"><option value="">Non affecté</option>${data.techniciens.map(t => `<option>${t}</option>`).join('')}</select></div>
+        <div class="form-group"><label>État</label><select id="outilEtat"><option>Bon</option><option>Moyen</option><option>Mauvais</option></select></div>
+        <button class="btn btn-primary" onclick="saveOutil()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveOutil() {
+    data.outils.push({
+        nom: document.getElementById('outilNom').value,
+        
