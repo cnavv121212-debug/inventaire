@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage localStorage - VINCI Facilities</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #004489 0%, #0066cc 100%);
+            min-height: 100vh; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 { color: #004489; margin-bottom: 20px; }
+        p { color: #718096; margin-bottom: 30px; line-height: 1.6; }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        .status.show {
+            display: block;
+        }
+        .status.success {
+            background: #e6ffe6;
+            color: #38a169;
+            border: 2px solid #48bb78;
+        }
+        .info-box {
+            background: #e6f2ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #004489;
+        }
+        .info-box h3 {
+            color: #004489;
+            margin-bottom: 10px;
+        }
+        .storage-list {
+            text-align: left;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .storage-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Nettoyage des données</h1>
+        <p>
+            Cette page permet de nettoyer complètement le localStorage et repartir à zéro 
+            pour tous les utilisateurs.
+        </p>
+
+        <div class="info-box">
+            <h3>📊 Données actuelles :</h3>
+            <div id="currentData" class="storage-list">
+                Chargement...
+            </div>
+        </div>
+
+        <button class="btn btn-danger" onclick="cleanAll()">
+            🗑️ NETTOYER TOUT
+        </button>
+
+        <button class="btn btn-success" onclick="goToApp()">
+            ✅ Retour à l'application
+        </button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        function displayCurrentData() {
+            const list = document.getElementById('currentData');
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('vinci_inv_'));
+            
+            if (keys.length === 0) {
+                list.innerHTML = '<div style="color: #718096; text-align: center;">Aucune donnée utilisateur</div>';
+            } else {
+                list.innerHTML = keys.map(key => {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    const articlesCount = data.inventoryPrincipal ? data.inventoryPrincipal.length : 0;
+                    const sitesCount = data.sites ? Object.keys(data.sites).length : 0;
+                    const outilsCount = data.outils ? data.outils.length : 0;
+                    
+                    return `
+                        <div class="storage-item">
+                            <strong>${key}</strong><br>
+                            Articles: ${articlesCount} | Sites: ${sitesCount} | Outils: ${outilsCount}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function cleanAll() {
+            if (confirm('⚠️ ATTENTION : Cette action va supprimer TOUTES les données de TOUS les utilisateurs.\n\nÊtes-vous sûr de vouloir continuer ?')) {
+                // Nettoyer tous les localStorage liés à l'application
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('vinci_inv_') || key === 'rememberedUser') {
+                        keysToRemove.push(key);
+                    }
+                }
+
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                // Nettoyer aussi sessionStorage
+                sessionStorage.clear();
+
+                const status = document.getElementById('status');
+                status.className = 'status success show';
+                status.innerHTML = `
+                    <h2>✅ Nettoyage réussi !</h2>
+                    <p>${keysToRemove.length} éléments supprimés</p>
+                    <p>Vous pouvez maintenant retourner à l'application et vous reconnecter.</p>
+                    <p><strong>Chaque utilisateur aura un inventaire vierge et séparé.</strong></p>
+                `;
+
+                displayCurrentData();
+            }
+        }
+
+        function goToApp() {
+            window.location.href = 'v400-improved.html';
+        }
+
+        // Afficher les données au chargement
+        displayCurrentData();
+    </script>
+</body>
+</html>
