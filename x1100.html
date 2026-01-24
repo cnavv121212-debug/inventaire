@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire Vinci Facilities</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #004489; min-height: 100vh; padding: 20px; }
+        
+        /* Page d'accueil / Login */
+        .welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); display: flex; align-items: center; justify-content: center; z-index: 3000; }
+        .welcome-screen.hidden { display: none; }
+        .welcome-container { background: white; border-radius: 25px; box-shadow: 0 25px 80px rgba(0,0,0,0.3); max-width: 450px; width: 90%; padding: 50px 40px; text-align: center; animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .welcome-logo { width: 100px; height: 100px; margin: 0 auto 25px; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,68,137,0.3); }
+        .welcome-logo svg { width: 50px; height: 50px; color: white; }
+        
+        .welcome-title { font-size: 2em; font-weight: 900; color: #2d3748; margin-bottom: 10px; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .welcome-subtitle { color: #718096; font-size: 1em; margin-bottom: 35px; font-weight: 500; }
+        
+        .login-form { text-align: left; }
+        .login-input-group { margin-bottom: 20px; }
+        .login-input-group label { display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; font-size: 0.95em; }
+        .login-input-group input { width: 100%; padding: 15px 18px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1em; transition: all 0.3s; background: #f7fafc; }
+        .login-input-group input:focus { outline: none; border-color: #004489; background: white; box-shadow: 0 0 0 4px rgba(0,68,137,0.1); }
+        .login-input-group input::placeholder { color: #a0aec0; }
+        
+        .remember-me { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
+        .remember-me input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #004489; }
+        .remember-me label { color: #718096; font-size: 0.9em; cursor: pointer; user-select: none; }
+        
+        .login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); color: white; border: none; border-radius: 12px; font-size: 1.1em; font-weight: 700; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 8px 20px rgba(0,68,137,0.3); }
+        .login-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,68,137,0.4); }
+        .login-btn:active { transform: translateY(-1px); }
+        
+        .login-error-msg { background: #fee; color: #e53e3e; padding: 12px 15px; border-radius: 10px; margin-top: 15px; font-size: 0.9em; font-weight: 600; display: none; border-left: 4px solid #e53e3e; }
+        .login-error-msg.show { display: block; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        
+        .welcome-footer { margin-top: 30px; padding-top: 25px; border-top: 2px solid #e2e8f0; color: #a0aec0; font-size: 0.85em; }
+        
+        /* Bouton déconnexion */
+        .logout-btn { background: rgba(229,62,62,0.1); border: 2px solid #e53e3e; color: #e53e3e; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+        .logout-btn:hover { background: #e53e3e; color: white; transform: scale(1.05); }
+        .logout-btn svg { width: 18px; height: 18px; }
+        
+        .user-info { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.1); padding: 10px 18px; border-radius: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1em; }
+        .user-name { color: white; font-weight: 600; font-size: 0.95em; }
+        
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: #2d3748; color: white; padding: 25px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .header-left { display: flex; align-items: center; gap: 30px; }
+        .header-title h1 { font-size: 1.8em; margin: 0; }
+        .header-title p { font-size: 0.9em; color: rgba(255,255,255,0.8); margin-top: 5px; }
+        .sync-indicator { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 25px; }
+        .sync-dot { width: 12px; height: 12px; border-radius: 50%; background: #48bb78; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #4299e1; animation: spin 1s linear infinite; }
+        .sync-dot.error { background: #f56565; }
+        .sync-text { color: white; font-size: 14px; font-weight: 600; }
+        .btn-sync { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-left: 10px; }
+        .btn-sync:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+        .btn-sync:active { transform: rotate(180deg); }
+        .btn-sync svg { color: white; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tabs { display: flex; background: #2d3748; }
+        .tab { flex: 1; padding: 20px; cursor: pointer; color: #a0aec0; font-weight: 700; border: none; background: none; }
+        .tab.active { background: #004489; color: white; }
+        .content { display: none; }
+        .content.active { display: block; }
+        .controls { padding: 25px; background: #f7fafc; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; border-bottom: 2px solid #e2e8f0; }
+        select, input { padding: 10px 15px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; transition: all 0.3s; }
+        select:focus, input:focus { outline: none; border-color: #004489; box-shadow: 0 0 0 3px rgba(0,68,137,0.1); }
+        select:hover, input:hover { border-color: #004489; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: #004489; color: white; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-warning { background: #ed8936; color: white; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: #edf2f7; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #718096; }
+        .stat-value.critical { color: #e53e3e; }
+        .stat-label { color: #718096; margin-top: 5px; }
+        
+        /* Tables - Optimisées pour Desktop */
+        .desktop-table-view { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        thead { background: #2d3748; color: white; position: sticky; top: 0; z-index: 5; }
+        th { padding: 15px; text-align: left; font-weight: 700; font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        tbody tr { transition: all 0.2s; }
+        tbody tr:hover { background: #f7fafc; transform: scale(1.001); box-shadow: 0 2px 8px rgba(0,68,137,0.1); }
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; background: #e2e8f0; }
+        .stock-low { color: #e53e3e; font-weight: bold; }
+        .stock-good { color: #48bb78; font-weight: bold; }
+        .btn-small { padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin: 0 2px; transition: all 0.2s; font-weight: 600; }
+        .btn-small:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .btn-add { background: #48bb78; color: white; }
+        .btn-add:hover { background: #38a169; }
+        .btn-remove { background: #f56565; color: white; }
+        .btn-remove:hover { background: #e53e3e; }
+        .btn-delete { background: #e53e3e; color: white; }
+        .btn-delete:hover { background: #c53030; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); overflow-y: auto; }
+        .modal-content { background: white; margin: 5% auto; padding: 35px; border-radius: 15px; width: 90%; max-width: 550px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlideIn 0.3s ease; }
+        @keyframes modalSlideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Autocomplete intelligent */
+        .autocomplete-container { position: relative; flex: 1; }
+        .autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #004489; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; }
+        .autocomplete-suggestions.show { display: block; }
+        .autocomplete-suggestion { padding: 12px 15px; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid #e2e8f0; }
+        .autocomplete-suggestion:last-child { border-bottom: none; }
+        .autocomplete-suggestion:hover { background: #f7fafc; }
+        .autocomplete-suggestion.selected { background: #e6f2ff; }
+        .suggestion-ref { font-weight: 700; color: #2d3748; font-size: 0.95em; }
+        .suggestion-designation { color: #718096; font-size: 0.85em; margin-top: 3px; }
+        .suggestion-metier { display: inline-block; padding: 2px 8px; background: #e2e8f0; border-radius: 10px; font-size: 0.75em; color: #2d3748; margin-top: 5px; }
+        .suggestion-stock { float: right; color: #48bb78; font-weight: 600; font-size: 0.9em; }
+        .suggestion-stock.low { color: #e53e3e; }
+        
+        /* Dashboard Styles - Interactif et Moderne */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; padding: 25px; background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); }
+        .dashboard-card { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-left: 5px solid #004489; position: relative; overflow: hidden; cursor: pointer; }
+        .dashboard-card::before { content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: radial-gradient(circle, rgba(0,68,137,0.05) 0%, transparent 70%); border-radius: 50%; transform: translate(30%, -30%); transition: all 0.4s; }
+        .dashboard-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 12px 35px rgba(0,68,137,0.2); border-left-width: 8px; }
+        .dashboard-card:hover::before { transform: translate(20%, -20%) scale(1.5); }
+        .dashboard-card:active { transform: translateY(-4px) scale(1.01); }
+        .dashboard-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .dashboard-card-title { font-size: 1.2em; font-weight: 800; color: #2d3748; letter-spacing: -0.5px; }
+        .dashboard-card-icon { width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .dashboard-card:hover .dashboard-card-icon { transform: rotate(5deg) scale(1.1); }
+        .dashboard-card-icon.critical { background: linear-gradient(135deg, #fee 0%, #fcc 100%); color: #e53e3e; box-shadow: 0 4px 15px rgba(229,62,62,0.2); }
+        .dashboard-card-icon.warning { background: linear-gradient(135deg, #fef3e2 0%, #ffd89b 100%); color: #ed8936; box-shadow: 0 4px 15px rgba(237,137,54,0.2); }
+        .dashboard-card-icon.success { background: linear-gradient(135deg, #e6ffe6 0%, #a7f3d0 100%); color: #48bb78; box-shadow: 0 4px 15px rgba(72,187,120,0.2); }
+        .dashboard-card-icon.info { background: linear-gradient(135deg, #e6f2ff 0%, #b3d9ff 100%); color: #004489; box-shadow: 0 4px 15px rgba(0,68,137,0.2); }
+        
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; padding: 25px; background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%); }
+        .kpi-card { background: white; padding: 25px; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; position: relative; overflow: hidden; border: 2px solid transparent; }
+        .kpi-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(0,68,137,0.05) 0%, transparent 100%); opacity: 0; transition: opacity 0.3s; }
+        .kpi-card:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 8px 30px rgba(0,68,137,0.15); border-color: #004489; }
+        .kpi-card:hover::after { opacity: 1; }
+        .kpi-card:active { transform: scale(0.98); }
+        .kpi-value { font-size: 3em; font-weight: 900; background: linear-gradient(135deg, #004489 0%, #0066cc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 10px; transition: all 0.3s; }
+        .kpi-card:hover .kpi-value { transform: scale(1.1); }
+        .kpi-value.critical { background: linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .kpi-label { color: #718096; font-weight: 700; margin-top: 8px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .chart-container { height: 280px; position: relative; padding: 10px 0; }
+        .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 100%; gap: 15px; padding: 20px 10px; }
+        .bar { flex: 1; background: linear-gradient(to top, #004489, #0066cc); border-radius: 12px 12px 0 0; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; min-height: 30px; box-shadow: 0 -2px 10px rgba(0,68,137,0.2); }
+        .bar:hover { transform: scaleY(1.08) translateY(-5px); background: linear-gradient(to top, #0066cc, #0088ff); box-shadow: 0 -5px 20px rgba(0,68,137,0.4); }
+        .bar:active { transform: scaleY(1.05); }
+        .bar.critical { background: linear-gradient(to top, #e53e3e, #ff6b6b); }
+        .bar.critical:hover { background: linear-gradient(to top, #ff6b6b, #ff8787); }
+        .bar.warning { background: linear-gradient(to top, #ed8936, #ffa940); }
+        .bar.warning:hover { background: linear-gradient(to top, #ffa940, #ffc266); }
+        .bar-label { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); font-size: 0.8em; color: #2d3748; font-weight: 700; white-space: nowrap; }
+        .bar-value { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 0.95em; font-weight: 800; color: #2d3748; background: white; padding: 5px 12px; border-radius: 8px; box-shadow: 0 3px 12px rgba(0,0,0,0.12); transition: all 0.3s; }
+        .bar:hover .bar-value { transform: translateX(-50%) scale(1.15); background: #004489; color: white; }
+        
+        .list-item { padding: 15px 18px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background: linear-gradient(135deg, #f7fafc 0%, #e6f2ff 100%); padding-left: 25px; box-shadow: 0 2px 8px rgba(0,68,137,0.1); transform: translateX(5px); }
+        .list-item:active { transform: scale(0.98); }
+        .list-item-name { font-weight: 700; color: #2d3748; transition: color 0.3s; }
+        .list-item:hover .list-item-name { color: #004489; }
+        .list-item-badge { padding: 6px 14px; border-radius: 15px; font-size: 0.85em; font-weight: 700; transition: all 0.3s; }
+        .list-item:hover .list-item-badge { transform: scale(1.1); }
+        .list-item-badge.critical { background: linear-gradient(135deg, #fee 0%, #fcc 100%); color: #e53e3e; box-shadow: 0 2px 8px rgba(229,62,62,0.2); }
+        .list-item-badge.warning { background: linear-gradient(135deg, #fef3e2 0%, #ffd89b 100%); color: #ed8936; box-shadow: 0 2px 8px rgba(237,137,54,0.2); }
+        .list-item-badge.success { background: linear-gradient(135deg, #e6ffe6 0%, #a7f3d0 100%); color: #48bb78; box-shadow: 0 2px 8px rgba(72,187,120,0.2); }
+        
+        .progress-bar { height: 10px; background: #e2e8f0; border-radius: 12px; overflow: hidden; margin-top: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .progress-fill { height: 100%; border-radius: 12px; transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .progress-fill.critical { background: linear-gradient(to right, #e53e3e, #ff6b6b); box-shadow: 0 2px 8px rgba(229,62,62,0.3); }
+        .progress-fill.warning { background: linear-gradient(to right, #ed8936, #ffa940); box-shadow: 0 2px 8px rgba(237,137,54,0.3); }
+        .progress-fill.success { background: linear-gradient(to right, #48bb78, #68d391); box-shadow: 0 2px 8px rgba(72,187,120,0.3); }
+        
+        .dashboard-full-width { grid-column: 1 / -1; }
+        
+        /* Pulse animation pour attirer l'attention */
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 4px 20px rgba(229,62,62,0.3); } 50% { box-shadow: 0 4px 30px rgba(229,62,62,0.5); } }
+        .dashboard-card.alert { animation: pulse-glow 2s infinite; }
+        
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        #modalTitle { color: #2d3748; font-size: 1.5em; font-weight: 700; }
+        .close { font-size: 28px; cursor: pointer; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748; font-size: 0.95em; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #004489; box-shadow: 0 0 0 3px rgba(0,68,137,0.1); }
+        .form-group input:hover, .form-group select:hover { border-color: #004489; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #cbd5e0; border-radius: 8px; }
+        .login-error { color: #e53e3e; margin-top: 10px; display: none; }
+        .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; padding: 20px; }
+        .list-card { background: white; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+        .list-card:hover { border-color: #004489; box-shadow: 0 5px 15px rgba(0,68,137,0.1); }
+        .list-card-name { font-weight: 700; color: #2d3748; font-size: 1.1em; }
+        .list-card-count { color: #718096; font-size: 0.9em; margin-top: 5px; }
+        .sync-info { background: #e6f2ff; border-left: 4px solid #004489; padding: 15px; margin: 20px; border-radius: 8px; color: #004489; font-size: 0.9em; }
+        .sync-info strong { display: block; margin-bottom: 5px; }
+        
+        /* RESPONSIVE MOBILE */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header { padding: 15px 20px; flex-direction: column; gap: 15px; }
+            .header-left { width: 100%; }
+            .header-title h1 { font-size: 1.3em; }
+            .header-title p { font-size: 0.8em; }
+            .sync-indicator { position: relative; top: auto; right: auto; margin: 0; }
+            .tabs { flex-direction: column; }
+            .tab { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .controls { flex-direction: column; gap: 10px; }
+            .controls select, .controls input, .controls button { width: 100%; }
+            .stats { grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+            .stat-card { padding: 15px; }
+            .stat-value { font-size: 1.5em; }
+            .sync-info { margin: 10px; padding: 10px; font-size: 0.85em; }
+            
+            /* Tables responsive */
+            table { display: block; overflow-x: auto; white-space: nowrap; margin: 0; -webkit-overflow-scrolling: touch; }
+            thead { display: table-header-group; }
+            tbody { display: table-row-group; }
+            th, td { padding: 10px 8px; font-size: 0.85em; }
+            th { position: sticky; top: 0; background: #2d3748; z-index: 10; }
+            .btn-small { padding: 4px 8px; font-size: 11px; margin: 1px; }
+            
+            /* Modal responsive */
+            .modal-content { width: 95%; margin: 10% auto; padding: 20px; max-height: 85vh; }
+            .form-group { margin-bottom: 15px; }
+            .form-group label { font-size: 0.9em; }
+            .form-group input, .form-group select { font-size: 14px; padding: 10px; }
+            
+            /* Login responsive */
+            .login-box { min-width: auto; width: 90%; padding: 25px; }
+            
+            /* Grilles responsive */
+            .list-grid { grid-template-columns: 1fr; gap: 10px; padding: 10px; }
+        }
+        
+        /* Mode carte mobile - masqué par défaut */
+        .mobile-card-view { display: none; }
+        
+        /* Mode desktop - visible par défaut */
+        .desktop-table-view { display: block; }
+        
+        /* Activation du mode carte sur mobile */
+        @media (max-width: 768px) {
+            .mobile-card-view { display: block; padding: 15px; }
+            .desktop-table-view { display: none !important; }
+            
+            /* Styles des cartes mobiles */
+            .item-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #004489; }
+            .item-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+            .item-card-ref { font-weight: 700; font-size: 1.1em; color: #2d3748; }
+            .item-card-badge { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 0.8em; background: #e2e8f0; margin-top: 3px; }
+            .item-card-body { margin-bottom: 12px; }
+            .item-card-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+            .item-card-row:last-child { border-bottom: none; }
+            .item-card-label { color: #718096; font-size: 0.85em; font-weight: 600; }
+            .item-card-value { color: #2d3748; font-weight: 600; }
+            .item-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+            .item-card-actions .btn-small { flex: 1; min-width: 45%; }
+        }
+        
+        @media (max-width: 480px) {
+            .header-title h1 { font-size: 1.1em; }
+            .tab { font-size: 0.9em; padding: 12px; }
+            .tab svg { width: 16px; height: 16px; }
+            .stat-value { font-size: 1.3em; }
+            .stat-label { font-size: 0.85em; }
+            th, td { padding: 8px 5px; font-size: 0.8em; }
+            .badge { font-size: 0.75em; padding: 3px 8px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page d'accueil / Login -->
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-container">
+            <div class="welcome-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+            </div>
+            
+            <h1 class="welcome-title">VINCI FACILITIES</h1>
+            <p class="welcome-subtitle">Gestion d'inventaire maintenance</p>
+            
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="login-input-group">
+                    <label for="loginUsername">Nom d'utilisateur</label>
+                    <input type="text" id="loginUsername" placeholder="Entrez votre nom d'utilisateur" required>
+                </div>
+                
+                <div class="login-input-group">
+                    <label for="loginPassword">Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="Entrez votre mot de passe" required>
+                </div>
+                
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Se souvenir de moi</label>
+                </div>
+                
+                <button type="submit" class="login-btn">Se connecter</button>
+                
+                <div class="login-error-msg" id="loginError">
+                    Nom d'utilisateur ou mot de passe incorrect
+                </div>
+            </form>
+            
+            <div class="welcome-footer">
+                © 2026 VINCI Facilities - Tous droits réservés
+            </div>
+        </div>
+    </div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#004489" stroke-width="2" style="margin: 0 auto 20px; display: block;">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h2>Accès Outils</h2>
+            <input type="password" id="passwordInput" placeholder="Mot de passe" onkeypress="if(event.key==='Enter') checkPassword()">
+            <button class="btn btn-primary" onclick="checkPassword()">Connexion</button>
+            <div class="login-error" id="loginError">Mot de passe incorrect</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="header-title">
+                    <h1>VINCI FACILITIES</h1>
+                    <p>Inventaire Maintenance - Synchronisé en temps réel</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-name" id="userName">Utilisateur</div>
+                </div>
+                <div class="sync-indicator">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <div class="sync-text" id="syncText">Connecté</div>
+                    <button class="btn-sync" onclick="manualSync()" title="Synchroniser">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('principal')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                Inventaire
+            </button>
+            <button class="tab" onclick="switchTab('itinerance')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Itinérance
+            </button>
+            <button class="tab" onclick="switchTab('outils')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+                Outils
+            </button>
+            <button class="tab" onclick="switchTab('dashboard')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Tableau de bord
+            </button>
+        </div>
+
+        <div id="dashboard" class="content">
+            <!-- KPIs principaux -->
+            <div class="kpi-row" id="dashboardKPIs"></div>
+            
+            <!-- Grille de cartes -->
+            <div class="dashboard-grid">
+                <!-- Stock critique -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <span class="dashboard-card-title">⚠️ Stocks Critiques</span>
+                        <div class="dashboard-card-icon critical">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="criticalStockList"></div>
+                </div>
+                
+                <!-- Articles les plus utilisés -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <span class="dashboard-card-title">🔥 Top Consommations</span>
+                        <div class="dashboard-card-icon warning">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="topUsedList"></div>
+                </div>
+                
+                <!-- Répartition par métier -->
+                <div class="dashboard-card dashboard-full-width">
+                    <div class="dashboard-card-header">
+                        <span class="dashboard-card-title">📊 Répartition par Métier</span>
+                        <div class="dashboard-card-icon info">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="metierChart"></div>
+                    </div>
+                </div>
+                
+                <!-- Rotation rapide -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <span class="dashboard-card-title">⚡ Rotation Rapide</span>
+                        <div class="dashboard-card-icon success">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="fastRotationList"></div>
+                </div>
+                
+                <!-- Taux de couverture -->
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <span class="dashboard-card-title">📈 Taux de Couverture</span>
+                        <div class="dashboard-card-icon info">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="coverageRateList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="principal" class="content active">
+            <div class="controls">
+                <select id="filterMetier" onchange="render()" style="min-width: 150px;">
+                    <option value="all">Tous les métiers</option>
+                </select>
+                <div class="autocomplete-container">
+                    <input type="text" id="searchPrincipal" placeholder="Rechercher..." oninput="handleAutocomplete(this, 'principal')" onfocus="handleAutocomplete(this, 'principal')" autocomplete="off">
+                    <div id="autocompletePrincipal" class="autocomplete-suggestions"></div>
+                </div>
+                <button class="btn btn-primary" onclick="addArticle()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Ajouter
+                </button>
+                <button class="btn btn-warning" onclick="manageMetiers()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Gérer Métiers
+                </button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalPrincipal">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="lowPrincipal">0</div><div class="stat-label">Stock Faible</div></div>
+            </div>
+            <div class="desktop-table-view">
+                <table>
+                    <thead><tr><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Min</th><th>Actions</th></tr></thead>
+                    <tbody id="tablePrincipal"></tbody>
+                </table>
+            </div>
+            <div class="mobile-card-view" id="mobileCardsPrincipal"></div>
+        </div>
+
+        <div id="itinerance" class="content">
+            <div class="sync-info">
+                <strong>ℹ️ Synchronisation</strong>
+                Vos modifications sont sauvegardées localement automatiquement. 
+                Cliquez sur le bouton 🔄 en haut à droite pour synchroniser avec Google Sheets et partager avec les autres appareils.
+            </div>
+            <div class="controls">
+                <select id="filterSite" onchange="render()"><option value="all">Tous les sites</option></select>
+                <select id="filterMetierSites" onchange="render()" style="min-width: 150px;">
+                    <option value="all">Tous les métiers</option>
+                </select>
+                <div class="autocomplete-container">
+                    <input type="text" id="searchSites" placeholder="Rechercher..." oninput="handleAutocomplete(this, 'sites')" onfocus="handleAutocomplete(this, 'sites')" autocomplete="off">
+                    <div id="autocompleteSites" class="autocomplete-suggestions"></div>
+                </div>
+                <button class="btn btn-primary" onclick="addSiteArticle()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Article
+                </button>
+                <button class="btn btn-success" onclick="showAddSiteModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    </svg>
+                    Nouveau Site
+                </button>
+                <button class="btn btn-danger" onclick="manageSites()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Gérer Sites
+                </button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalSites">0</div><div class="stat-label">Articles</div></div>
+                <div class="stat-card"><div class="stat-value" id="nbSites">0</div><div class="stat-label">Sites</div></div>
+            </div>
+            <div class="desktop-table-view">
+                <table>
+                    <thead><tr><th>Site</th><th>Réf</th><th>Désignation</th><th>Métier</th><th>Stock</th><th>Actions</th></tr></thead>
+                    <tbody id="tableSites"></tbody>
+                </table>
+            </div>
+            <div class="mobile-card-view" id="mobileCardsSites"></div>
+        </div>
+
+        <div id="outils" class="content">
+            <div class="controls">
+                <select id="filterTech" onchange="render()"><option value="all">Tous</option></select>
+                <input type="text" id="searchOutils" placeholder="Rechercher..." oninput="render()" style="flex: 1;">
+                <button class="btn btn-primary" onclick="addOutil()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Outil
+                </button>
+                <button class="btn btn-success" onclick="showAddTechModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Nouveau Technicien
+                </button>
+                <button class="btn btn-danger" onclick="manageTechs()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Gérer Techniciens
+                </button>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="totalOutils">0</div><div class="stat-label">Outils</div></div>
+                <div class="stat-card"><div class="stat-value" id="affectes">0</div><div class="stat-label">Affectés</div></div>
+            </div>
+            <div class="desktop-table-view">
+                <table>
+                    <thead><tr><th>Outil</th><th>Catégorie</th><th>Technicien</th><th>État</th><th>Actions</th></tr></thead>
+                    <tbody id="tableOutils"></tbody>
+                </table>
+            </div>
+            <div class="mobile-card-view" id="mobileCardsOutils"></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close" onclick="closeModal()">×</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaO7BvZgd23jPj5Nn3DGcN1GkZAufvFDCljw7Y3v6HkTze-EF1UShdl1jmeH4s4dy7/exec';
+const PASSWORD = 'topaz';
+let outilsAuth = false;
+
+// Système d'authentification
+let currentUser = null;
+const users = {
+    // Format: username: password
+    'user1': 'mimi',
+    'user2': 'titi',
+    'user3': 'loulou',
+    'user4': 'lili',
+    'user5': 'tictac'
+};
+
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const errorMsg = document.getElementById('loginError');
+    
+    // Vérifier les identifiants
+    if (users[username] && users[username] === password) {
+        currentUser = { username: username };
+        
+        // Sauvegarder si "Se souvenir"
+        if (rememberMe) {
+            localStorage.setItem('rememberedUser', JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem('rememberedUser');
+        }
+        
+        // Sauvegarder la session
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
+        // Afficher l'interface
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+    } else {
+        errorMsg.classList.add('show');
+        setTimeout(() => errorMsg.classList.remove('show'), 3000);
+    }
+}
+
+function handleLogout() {
+    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+        console.log(`👋 Déconnexion de ${currentUser.username}`);
+        
+        // Sauvegarder les données avant déconnexion
+        save();
+        
+        // Nettoyer complètement
+        currentUser = null;
+        sessionStorage.removeItem('currentUser');
+        
+        // Réinitialiser les données globales
+        data = getEmptyData();
+        console.log('🧹 Données réinitialisées');
+        
+        // Retour à l'écran de connexion
+        document.getElementById('welcomeScreen').classList.remove('hidden');
+        
+        // Réinitialiser le formulaire
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('rememberMe').checked = false;
+    }
+}
+
+function checkAutoLogin() {
+    // Vérifier la session active
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) {
+        currentUser = JSON.parse(sessionUser);
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+        return;
+    }
+    
+    // Vérifier "Se souvenir de moi"
+    const rememberedUser = localStorage.getItem('rememberedUser');
+    if (rememberedUser) {
+        currentUser = JSON.parse(rememberedUser);
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        initializeApp();
+        document.getElementById('rememberMe').checked = true;
+    }
+}
+
+function initializeApp() {
+    console.log(`🔑 Initialisation pour l'utilisateur: ${currentUser.username}`);
+    
+    // ⚠️ IMPORTANT: Réinitialisation COMPLÈTE des données
+    data = getEmptyData();
+    
+    // Afficher le nom de l'utilisateur
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    
+    userName.textContent = currentUser.username;
+    userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+    
+    // Charger les données spécifiques de l'utilisateur
+    loadUserData();
+}
+
+async function loadUserData() {
+    if (!currentUser) return;
+    
+    const storageKey = getUserStorageKey();
+    console.log(`📂 Chargement des données depuis: ${storageKey}`);
+    
+    // Charger depuis localStorage
+    const saved = localStorage.getItem(storageKey);
+    
+    if (saved) {
+        try {
+            data = JSON.parse(saved);
+            console.log(`✅ Données chargées depuis localStorage pour ${currentUser.username}:`, data);
+        } catch(e) {
+            console.error('❌ Erreur parsing localStorage:', e);
+            data = getEmptyData();
+        }
+    } else {
+        console.log(`🆕 Nouveau utilisateur ${currentUser.username} - données par défaut`);
+        data = getEmptyData();
+        // Sauvegarder immédiatement les données vierges
+        localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+    
+    updateFilters();
+    render();
+}
+
+function getUserStorageKey() {
+    return `vinci_inv_${currentUser.username}`;
+}
+
+function getEmptyData() {
+    return {
+        inventoryPrincipal: [], 
+        sites: {}, 
+        outils: [], 
+        techniciens: [], 
+        metiers: ['CVC', 'Électricité', 'Plomberie', 'Divers']
+    };
+}
+
+let data = getEmptyData();
+
+function checkPassword() {
+    if (document.getElementById('passwordInput').value === PASSWORD) {
+        outilsAuth = true;
+        document.getElementById('loginOverlay').style.display = 'none';
+        render();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+async function save() {
+    if (!currentUser) {
+        console.warn('⚠️ Tentative de sauvegarde sans utilisateur connecté');
+        return;
+    }
+    
+    const storageKey = getUserStorageKey();
+    console.log(`💾 Sauvegarde des données de ${currentUser.username} dans ${storageKey}`);
+    console.log('Données à sauvegarder:', JSON.stringify(data, null, 2));
+    
+    // Sauvegarder dans localStorage avec la clé spécifique à l'utilisateur
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    console.log(`✅ Sauvegarde locale réussie pour ${currentUser.username}`);
+    
+    // TODO: Synchronisation Google Sheets (optionnel)
+    try {
+        updateSync('syncing');
+        await fetch(GOOGLE_SCRIPT_URL, {
+            redirect: 'follow',
+            method: 'POST',
+            headers: {'Content-Type': 'text/plain;charset=utf-8'},
+            body: JSON.stringify({
+                action: 'save', 
+                user: currentUser.username,
+                payload: data
+            })
+        });
+        updateSync('synced');
+        console.log('✅ Synchronisation Google Sheets réussie');
+    } catch(e) { 
+        updateSync('error'); 
+        console.error('❌ Erreur synchronisation Google Sheets:', e);
+    }
+}
+
+async function manualSync() {
+    const btn = document.querySelector('.btn-sync');
+    btn.style.animation = 'spin 1s linear infinite';
+    
+    try {
+        // 1. Sauvegarder d'abord
+        await save();
+        
+        // 2. Attendre un peu
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 3. Recharger les données
+        await loadUserData();
+        
+        // Notification de succès
+        const syncText = document.getElementById('syncText');
+        const originalText = syncText.textContent;
+        syncText.textContent = '✓ Synchronisé';
+        setTimeout(() => {
+            syncText.textContent = originalText;
+        }, 2000);
+    } catch(e) {
+        console.error('Erreur sync:', e);
+    } finally {
+        btn.style.animation = '';
+    }
+}
+
+function updateSync(status) {
+    const dot = document.getElementById('syncDot');
+    const text = document.getElementById('syncText');
+    if (status === 'syncing') {
+        dot.className = 'sync-dot syncing';
+        text.textContent = 'Sync...';
+    } else if (status === 'synced') {
+        dot.className = 'sync-dot';
+        text.textContent = 'Synchronisé';
+    } else {
+        dot.className = 'sync-dot error';
+        text.textContent = 'Erreur';
+    }
+}
+
+function switchTab(tab) {
+    if (tab === 'outils' && !outilsAuth) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return;
+    }
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab).classList.add('active');
+    render();
+}
+
+function updateFilters() {
+    const fs = document.getElementById('filterSite');
+    fs.innerHTML = '<option value="all">Tous</option>';
+    Object.keys(data.sites).sort().forEach(s => fs.innerHTML += `<option value="${s}">${s}</option>`);
+    
+    const ft = document.getElementById('filterTech');
+    ft.innerHTML = '<option value="all">Tous</option>';
+    data.techniciens.sort().forEach(t => ft.innerHTML += `<option value="${t}">${t}</option>`);
+    
+    // Mise à jour des filtres métiers
+    const fm = document.getElementById('filterMetier');
+    if (fm) {
+        fm.innerHTML = '<option value="all">Tous les métiers</option>';
+        data.metiers.sort().forEach(m => fm.innerHTML += `<option value="${m}">${m}</option>`);
+    }
+    
+    const fms = document.getElementById('filterMetierSites');
+    if (fms) {
+        fms.innerHTML = '<option value="all">Tous les métiers</option>';
+        data.metiers.sort().forEach(m => fms.innerHTML += `<option value="${m}">${m}</option>`);
+    }
+}
+
+function render() {
+    renderDashboard();
+    renderPrincipal();
+    renderSites();
+    if (outilsAuth) renderOutils();
+}
+
+function renderDashboard() {
+    // Calculer les KPIs
+    const totalArticles = data.inventoryPrincipal.length;
+    const criticalStock = data.inventoryPrincipal.filter(i => i.stock < i.stockMin).length;
+    const totalSites = Object.keys(data.sites).length;
+    const totalOutils = data.outils.length;
+    
+    // Afficher les KPIs
+    document.getElementById('dashboardKPIs').innerHTML = `
+        <div class="kpi-card" onclick="switchTab('principal')" title="Voir l'inventaire complet">
+            <div class="kpi-value">${totalArticles}</div>
+            <div class="kpi-label">Articles Totaux</div>
+        </div>
+        <div class="kpi-card ${criticalStock > 0 ? 'alert' : ''}" onclick="showCriticalStocksDetail()" title="Voir les stocks critiques">
+            <div class="kpi-value critical">${criticalStock}</div>
+            <div class="kpi-label">Stocks Critiques</div>
+        </div>
+        <div class="kpi-card" onclick="switchTab('itinerance')" title="Voir les sites">
+            <div class="kpi-value">${totalSites}</div>
+            <div class="kpi-label">Sites Actifs</div>
+        </div>
+        <div class="kpi-card" onclick="switchTab('outils')" title="Voir les outils">
+            <div class="kpi-value">${totalOutils}</div>
+            <div class="kpi-label">Outils Gérés</div>
+        </div>
+    `;
+    
+    // Stocks critiques - Les plus proches de 0
+    const criticalItems = data.inventoryPrincipal
+        .filter(i => i.stock < i.stockMin)
+        .sort((a, b) => (a.stock / a.stockMin) - (b.stock / b.stockMin))
+        .slice(0, 5);
+    
+    document.getElementById('criticalStockList').innerHTML = criticalItems.length > 0 ? criticalItems.map(item => {
+        const percentage = Math.round((item.stock / item.stockMin) * 100);
+        return `
+            <div class="list-item" onclick="searchAndGoToItem('${item.ref.replace(/'/g, "\\'")}', 'principal')" title="Cliquez pour voir cet article">
+                <div style="flex: 1;">
+                    <div class="list-item-name">${item.ref} - ${item.designation}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill critical" style="width: ${Math.max(percentage, 5)}%"></div>
+                    </div>
+                </div>
+                <span class="list-item-badge critical">${item.stock}/${item.stockMin}</span>
+            </div>
+        `;
+    }).join('') : '<p style="text-align: center; color: #718096; padding: 20px;">✅ Aucun stock critique</p>';
+    
+    // Top consommations (articles avec stock le plus bas par rapport au min)
+    const topUsed = data.inventoryPrincipal
+        .filter(i => i.stock < i.stockMin * 1.5) // Articles en dessous de 150% du minimum
+        .sort((a, b) => a.stock - b.stock)
+        .slice(0, 5);
+    
+    document.getElementById('topUsedList').innerHTML = topUsed.length > 0 ? topUsed.map(item => {
+        const urgency = item.stock < item.stockMin * 0.5 ? 'critical' : 'warning';
+        return `
+            <div class="list-item" onclick="searchAndGoToItem('${item.ref.replace(/'/g, "\\'")}', 'principal')" title="Cliquez pour voir cet article">
+                <div style="flex: 1;">
+                    <div class="list-item-name">${item.ref}</div>
+                    <div style="font-size: 0.85em; color: #718096;">${item.metier}</div>
+                </div>
+                <span class="list-item-badge ${urgency}">${item.stock} restant(s)</span>
+            </div>
+        `;
+    }).join('') : '<p style="text-align: center; color: #718096; padding: 20px;">✅ Stocks suffisants</p>';
+    
+    // Répartition par métier
+    const metierStats = {};
+    data.metiers.forEach(m => metierStats[m] = 0);
+    data.inventoryPrincipal.forEach(item => {
+        if (metierStats[item.metier] !== undefined) {
+            metierStats[item.metier]++;
+        }
+    });
+    
+    const maxCount = Math.max(...Object.values(metierStats), 1);
+    document.getElementById('metierChart').innerHTML = Object.keys(metierStats)
+        .sort((a, b) => metierStats[b] - metierStats[a])
+        .map(metier => {
+            const count = metierStats[metier];
+            const height = (count / maxCount) * 100;
+            return `
+                <div class="bar" style="height: ${height}%" onclick="filterByMetierFromDashboard('${metier}')" title="Cliquez pour filtrer par ${metier}">
+                    <div class="bar-value">${count}</div>
+                    <div class="bar-label">${metier}</div>
+                </div>
+            `;
+        }).join('');
+    
+    // Rotation rapide (articles qui atteignent souvent le stock critique)
+    const fastRotation = data.inventoryPrincipal
+        .filter(i => i.stock <= i.stockMin * 1.2)
+        .sort((a, b) => (b.stockMin - b.stock) - (a.stockMin - a.stock))
+        .slice(0, 5);
+    
+    document.getElementById('fastRotationList').innerHTML = fastRotation.length > 0 ? fastRotation.map(item => {
+        const diff = item.stockMin - item.stock;
+        return `
+            <div class="list-item">
+                <div style="flex: 1;">
+                    <div class="list-item-name">${item.designation}</div>
+                    <div style="font-size: 0.85em; color: #718096;">${item.ref}</div>
+                </div>
+                <span class="list-item-badge warning">-${diff}</span>
+            </div>
+        `;
+    }).join('') : '<p style="text-align: center; color: #718096; padding: 20px;">Aucune rotation rapide</p>';
+    
+    // Taux de couverture
+    const coverageRate = data.inventoryPrincipal.map(item => {
+        const rate = (item.stock / item.stockMin) * 100;
+        return { ...item, rate: Math.round(rate) };
+    }).sort((a, b) => a.rate - b.rate).slice(0, 5);
+    
+    document.getElementById('coverageRateList').innerHTML = coverageRate.map(item => {
+        const status = item.rate < 50 ? 'critical' : item.rate < 100 ? 'warning' : 'success';
+        return `
+            <div class="list-item">
+                <div style="flex: 1;">
+                    <div class="list-item-name">${item.ref}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${status}" style="width: ${Math.min(item.rate, 100)}%"></div>
+                    </div>
+                </div>
+                <span class="list-item-badge ${status}">${item.rate}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderPrincipal() {
+    const search = document.getElementById('searchPrincipal').value.toLowerCase();
+    const metierFilter = document.getElementById('filterMetier').value;
+    
+    const filtered = data.inventoryPrincipal.filter(i => {
+        const matchSearch = i.ref.toLowerCase().includes(search) || 
+                           i.designation.toLowerCase().includes(search) ||
+                           i.metier.toLowerCase().includes(search);
+        const matchMetier = metierFilter === 'all' || i.metier === metierFilter;
+        return matchSearch && matchMetier;
+    });
+    
+    // Rendu tableau desktop
+    document.getElementById('tablePrincipal').innerHTML = filtered.map((item, idx) => {
+        const realIdx = data.inventoryPrincipal.indexOf(item);
+        return `
+        <tr>
+            <td><strong>${item.ref}</strong></td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>${item.stockMin}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modStock(${realIdx}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modStock(${realIdx}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delItem(${realIdx})">×</button>
+            </td>
+        </tr>`;
+    }).join('');
+    
+    // Rendu cartes mobile
+    document.getElementById('mobileCardsPrincipal').innerHTML = filtered.map((item, idx) => {
+        const realIdx = data.inventoryPrincipal.indexOf(item);
+        return `
+        <div class="item-card">
+            <div class="item-card-header">
+                <div>
+                    <div class="item-card-ref">${item.ref}</div>
+                    <span class="item-card-badge">${item.metier}</span>
+                </div>
+            </div>
+            <div class="item-card-body">
+                <div class="item-card-row">
+                    <span class="item-card-label">Désignation</span>
+                    <span class="item-card-value">${item.designation}</span>
+                </div>
+                <div class="item-card-row">
+                    <span class="item-card-label">Stock actuel</span>
+                    <span class="item-card-value ${item.stock < item.stockMin ? 'stock-low' : 'stock-good'}">${item.stock}</span>
+                </div>
+                <div class="item-card-row">
+                    <span class="item-card-label">Stock minimum</span>
+                    <span class="item-card-value">${item.stockMin}</span>
+                </div>
+            </div>
+            <div class="item-card-actions">
+                <button class="btn-small btn-add" onclick="modStock(${realIdx}, 1)">+ Stock</button>
+                <button class="btn-small btn-remove" onclick="modStock(${realIdx}, -1)">- Stock</button>
+                <button class="btn-small btn-delete" onclick="delItem(${realIdx})">Supprimer</button>
+            </div>
+        </div>`;
+    }).join('');
+    
+    document.getElementById('totalPrincipal').textContent = data.inventoryPrincipal.length;
+    const low = data.inventoryPrincipal.filter(i => i.stock < i.stockMin).length;
+    document.getElementById('lowPrincipal').textContent = low;
+    document.getElementById('lowPrincipal').className = low > 0 ? 'stat-value critical' : 'stat-value';
+}
+
+function renderSites() {
+    const search = document.getElementById('searchSites').value.toLowerCase();
+    const siteFilter = document.getElementById('filterSite').value;
+    const metierFilter = document.getElementById('filterMetierSites').value;
+    let items = [];
+    
+    Object.keys(data.sites).forEach(site => {
+        if (siteFilter === 'all' || siteFilter === site) {
+            data.sites[site].forEach((item, idx) => {
+                const matchSearch = item.ref.toLowerCase().includes(search) || 
+                                   item.designation.toLowerCase().includes(search) ||
+                                   item.metier.toLowerCase().includes(search);
+                const matchMetier = metierFilter === 'all' || item.metier === metierFilter;
+                
+                if (matchSearch && matchMetier) {
+                    items.push({site, item, idx});
+                }
+            });
+        }
+    });
+    
+    // Rendu tableau desktop
+    document.getElementById('tableSites').innerHTML = items.map(({site, item, idx}) => `
+        <tr>
+            <td><strong>${site}</strong></td>
+            <td>${item.ref}</td>
+            <td>${item.designation}</td>
+            <td><span class="badge">${item.metier}</span></td>
+            <td class="${item.stock < (item.stockMin||0) ? 'stock-low' : 'stock-good'}">${item.stock}</td>
+            <td>
+                <button class="btn-small btn-add" onclick="modSiteStock('${site}', ${idx}, 1)">+</button>
+                <button class="btn-small btn-remove" onclick="modSiteStock('${site}', ${idx}, -1)">-</button>
+                <button class="btn-small btn-delete" onclick="delSiteItem('${site}', ${idx})">×</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    // Rendu cartes mobile
+    document.getElementById('mobileCardsSites').innerHTML = items.map(({site, item, idx}) => `
+        <div class="item-card">
+            <div class="item-card-header">
+                <div>
+                    <div class="item-card-ref">${item.ref}</div>
+                    <span class="item-card-badge">${item.metier}</span>
+                </div>
+            </div>
+            <div class="item-card-body">
+                <div class="item-card-row">
+                    <span class="item-card-label">Site</span>
+                    <span class="item-card-value">${site}</span>
+                </div>
+                <div class="item-card-row">
+                    <span class="item-card-label">Désignation</span>
+                    <span class="item-card-value">${item.designation}</span>
+                </div>
+                <div class="item-card-row">
+                    <span class="item-card-label">Stock</span>
+                    <span class="item-card-value ${item.stock < (item.stockMin||0) ? 'stock-low' : 'stock-good'}">${item.stock}</span>
+                </div>
+            </div>
+            <div class="item-card-actions">
+                <button class="btn-small btn-add" onclick="modSiteStock('${site}', ${idx}, 1)">+ Stock</button>
+                <button class="btn-small btn-remove" onclick="modSiteStock('${site}', ${idx}, -1)">- Stock</button>
+                <button class="btn-small btn-delete" onclick="delSiteItem('${site}', ${idx})">Supprimer</button>
+            </div>
+        </div>
+    `).join('');
+    
+    let total = 0;
+    Object.values(data.sites).forEach(s => total += s.length);
+    document.getElementById('totalSites').textContent = total;
+    document.getElementById('nbSites').textContent = Object.keys(data.sites).length;
+}
+
+function renderOutils() {
+    const search = document.getElementById('searchOutils').value.toLowerCase();
+    const techFilter = document.getElementById('filterTech').value;
+    const filtered = data.outils.filter(o => {
+        const matchSearch = o.nom.toLowerCase().includes(search);
+        const matchTech = techFilter === 'all' || o.technicien === techFilter;
+        return matchSearch && matchTech;
+    });
+    
+    // Rendu tableau desktop
+    document.getElementById('tableOutils').innerHTML = filtered.map(o => {
+        const realIdx = data.outils.indexOf(o);
+        return `
+        <tr>
+            <td><strong>${o.nom}</strong></td>
+            <td>${o.categorie}</td>
+            <td>
+                <select onchange="assignTech(${realIdx}, this.value)" style="padding: 5px;">
+                    <option value="">Non affecté</option>
+                    ${data.techniciens.map(t => `<option value="${t}" ${o.technicien === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+            </td>
+            <td class="${o.etat === 'Bon' ? 'stock-good' : ''}">${o.etat}</td>
+            <td><button class="btn-small btn-delete" onclick="delOutil(${realIdx})">×</button></td>
+        </tr>`;
+    }).join('');
+    
+    // Rendu cartes mobile
+    document.getElementById('mobileCardsOutils').innerHTML = filtered.map(o => {
+        const realIdx = data.outils.indexOf(o);
+        return `
+        <div class="item-card">
+            <div class="item-card-header">
+                <div>
+                    <div class="item-card-ref">${o.nom}</div>
+                    <span class="item-card-badge">${o.categorie}</span>
+                </div>
+            </div>
+            <div class="item-card-body">
+                <div class="item-card-row">
+                    <span class="item-card-label">Technicien</span>
+                    <select onchange="assignTech(${realIdx}, this.value)" style="padding: 8px; border: 1px solid #cbd5e0; border-radius: 5px; width: 100%;">
+                        <option value="">Non affecté</option>
+                        ${data.techniciens.map(t => `<option value="${t}" ${o.technicien === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="item-card-row">
+                    <span class="item-card-label">État</span>
+                    <span class="item-card-value ${o.etat === 'Bon' ? 'stock-good' : ''}">${o.etat}</span>
+                </div>
+            </div>
+            <div class="item-card-actions">
+                <button class="btn-small btn-delete" onclick="delOutil(${realIdx})" style="width: 100%;">Supprimer</button>
+            </div>
+        </div>`;
+    }).join('');
+    
+    document.getElementById('totalOutils').textContent = data.outils.length;
+    document.getElementById('affectes').textContent = data.outils.filter(o => o.technicien).length;
+}
+
+function modStock(idx, qty) {
+    data.inventoryPrincipal[idx].stock = Math.max(0, data.inventoryPrincipal[idx].stock + qty);
+    render();
+    save();
+}
+
+function modSiteStock(site, idx, qty) {
+    data.sites[site][idx].stock = Math.max(0, data.sites[site][idx].stock + qty);
+    render();
+    save();
+}
+
+function delItem(idx) {
+    if (confirm('Supprimer cet article ?')) {
+        data.inventoryPrincipal.splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function delSiteItem(site, idx) {
+    if (confirm('Supprimer ?')) {
+        data.sites[site].splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function delOutil(idx) {
+    if (confirm('Supprimer ?')) {
+        data.outils.splice(idx, 1);
+        render();
+        save();
+    }
+}
+
+function assignTech(idx, tech) {
+    data.outils[idx].technicien = tech;
+    save();
+}
+
+function addArticle() {
+    document.getElementById('modalTitle').textContent = 'Ajouter Article';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Référence</label><input id="ref"></div>
+        <div class="form-group"><label>Désignation</label><input id="des"></div>
+        <div class="form-group"><label>Métier</label><select id="metier">${data.metiers.map(m => `<option>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Stock</label><input id="stock" type="number" value="0"></div>
+        <div class="form-group"><label>Min</label><input id="min" type="number" value="5"></div>
+        <button class="btn btn-primary" onclick="saveArticle()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveArticle() {
+    data.inventoryPrincipal.push({
+        ref: document.getElementById('ref').value,
+        designation: document.getElementById('des').value,
+        metier: document.getElementById('metier').value,
+        stock: +document.getElementById('stock').value,
+        stockMin: +document.getElementById('min').value,
+        unit: 'pcs'
+    });
+    closeModal();
+    render();
+    save();
+}
+
+function showAddSiteModal() {
+    document.getElementById('modalTitle').textContent = 'Ajouter un Nouveau Site';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+            <label>Nom du site</label>
+            <input id="siteName" placeholder="Ex: Paris, Lyon, Marseille...">
+        </div>
+        <div class="form-group">
+            <label>Description (optionnel)</label>
+            <input id="siteDesc" placeholder="Description du site">
+        </div>
+        <button class="btn btn-primary" onclick="saveSite()">Créer le site</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveSite() {
+    const name = document.getElementById('siteName').value.trim();
+    if (name && !data.sites[name]) {
+        data.sites[name] = [];
+        updateFilters();
+        closeModal();
+        render();
+        save(); // Sauvegarde immédiate
+        
+        // Confirmation visuelle
+        const syncText = document.getElementById('syncText');
+        const originalText = syncText.textContent;
+        syncText.textContent = '✓ Site créé';
+        setTimeout(() => {
+            syncText.textContent = originalText;
+        }, 2000);
+    } else if (data.sites[name]) {
+        alert('Ce site existe déjà !');
+    } else {
+        alert('Veuillez entrer un nom de site');
+    }
+}
+
+function manageSites() {
+    const sitesList = Object.keys(data.sites).sort().map(site => {
+        const count = data.sites[site].length;
+        return `
+            <div class="list-card">
+                <div>
+                    <div class="list-card-name">${site}</div>
+                    <div class="list-card-count">${count} article(s)</div>
+                </div>
+                <button class="btn-small btn-delete" onclick="deleteSite('${site}')">Supprimer</button>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('modalTitle').textContent = 'Gérer les Sites';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="list-grid">
+            ${sitesList || '<p style="text-align:center;color:#718096;">Aucun site créé</p>'}
+        </div>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function deleteSite(siteName) {
+    const count = data.sites[siteName].length;
+    if (confirm(`Supprimer le site "${siteName}" et ses ${count} article(s) ?`)) {
+        delete data.sites[siteName];
+        updateFilters();
+        render();
+        save();
+        manageSites(); // Rafraîchir la liste
+    }
+}
+
+function addSite() {
+    showAddSiteModal(); // Redirection vers la nouvelle fonction
+}
+
+function addSiteArticle() {
+    if (Object.keys(data.sites).length === 0) return alert('Créez un site d\'abord !');
+    document.getElementById('modalTitle').textContent = 'Ajouter Article';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Site</label><select id="site">${Object.keys(data.sites).map(s => `<option>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Référence</label><input id="sref"></div>
+        <div class="form-group"><label>Désignation</label><input id="sdes"></div>
+        <div class="form-group"><label>Métier</label><select id="smet">${data.metiers.map(m => `<option>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Stock</label><input id="sstock" type="number" value="0"></div>
+        <button class="btn btn-primary" onclick="saveSiteArticle()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveSiteArticle() {
+    const site = document.getElementById('site').value;
+    data.sites[site].push({
+        ref: document.getElementById('sref').value,
+        designation: document.getElementById('sdes').value,
+        metier: document.getElementById('smet').value,
+        stock: +document.getElementById('sstock').value,
+        stockMin: 5,
+        unit: 'pcs'
+    });
+    closeModal();
+    render();
+    save();
+}
+
+function addOutil() {
+    document.getElementById('modalTitle').textContent = 'Ajouter Outil';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Nom</label><input id="onom"></div>
+        <div class="form-group"><label>Catégorie</label><input id="ocat" value="Autre"></div>
+        <div class="form-group"><label>Technicien</label><select id="otech"><option value="">Aucun</option>${data.techniciens.map(t => `<option>${t}</option>`).join('')}</select></div>
+        <div class="form-group"><label>État</label><select id="oetat"><option>Bon</option><option>Moyen</option><option>Mauvais</option></select></div>
+        <button class="btn btn-primary" onclick="saveOutil()">Ajouter</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveOutil() {
+    data.outils.push({
+        nom: document.getElementById('onom').value,
+        categorie: document.getElementById('ocat').value,
+        technicien: document.getElementById('otech').value,
+        etat: document.getElementById('oetat').value,
+        serie: '',
+        dateAttribution: new Date().toLocaleDateString()
+    });
+    closeModal();
+    render();
+    save();
+}
+
+function showAddTechModal() {
+    document.getElementById('modalTitle').textContent = 'Ajouter un Nouveau Technicien';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+            <label>Nom du technicien</label>
+            <input id="techName" placeholder="Ex: Jean Dupont">
+        </div>
+        <div class="form-group">
+            <label>Spécialité (optionnel)</label>
+            <select id="techSpec">
+                <option value="">Aucune</option>
+                ${data.metiers.map(m => `<option value="${m}">${m}</option>`).join('')}
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveTech()">Ajouter le technicien</button>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function saveTech() {
+    const name = document.getElementById('techName').value.trim();
+    if (name && !data.techniciens.includes(name)) {
+        data.techniciens.push(name);
+        updateFilters();
+        closeModal();
+        render();
+        save();
+    } else if (data.techniciens.includes(name)) {
+        alert('Ce technicien existe déjà !');
+    } else {
+        alert('Veuillez entrer un nom');
+    }
+}
+
+function manageTechs() {
+    const techsList = data.techniciens.sort().map(tech => {
+        const count = data.outils.filter(o => o.technicien === tech).length;
+        return `
+            <div class="list-card">
+                <div>
+                    <div class="list-card-name">${tech}</div>
+                    <div class="list-card-count">${count} outil(s) affecté(s)</div>
+                </div>
+                <button class="btn-small btn-delete" onclick="deleteTech('${tech}')">Supprimer</button>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('modalTitle').textContent = 'Gérer les Techniciens';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="list-grid">
+            ${techsList || '<p style="text-align:center;color:#718096;">Aucun technicien ajouté</p>'}
+        </div>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function deleteTech(techName) {
+    const count = data.outils.filter(o => o.technicien === techName).length;
+    if (confirm(`Supprimer le technicien "${techName}" ? ${count > 0 ? `${count} outil(s) seront désaffectés.` : ''}`)) {
+        data.techniciens = data.techniciens.filter(t => t !== techName);
+        // Désaffecter les outils
+        data.outils.forEach(o => {
+            if (o.technicien === techName) o.technicien = '';
+        });
+        updateFilters();
+        render();
+        save();
+        manageTechs(); // Rafraîchir la liste
+    }
+}
+
+function addTech() {
+    showAddTechModal(); // Redirection vers la nouvelle fonction
+}
+
+function manageMetiers() {
+    const metiersList = data.metiers.sort().map(metier => {
+        const countPrincipal = data.inventoryPrincipal.filter(i => i.metier === metier).length;
+        let countSites = 0;
+        Object.values(data.sites).forEach(site => {
+            countSites += site.filter(i => i.metier === metier).length;
+        });
+        const total = countPrincipal + countSites;
+        
+        return `
+            <div class="list-card">
+                <div>
+                    <div class="list-card-name">${metier}</div>
+                    <div class="list-card-count">${total} article(s) - ${countPrincipal} inventaire / ${countSites} sites</div>
+                </div>
+                <button class="btn-small btn-delete" onclick="deleteMetier('${metier}')">Supprimer</button>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('modalTitle').textContent = 'Gérer les Métiers';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+            <label>Ajouter un nouveau métier</label>
+            <div style="display: flex; gap: 10px;">
+                <input id="newMetierName" placeholder="Ex: Électricité, Plomberie..." style="flex: 1;">
+                <button class="btn btn-primary" onclick="addMetierFromModal()">Ajouter</button>
+            </div>
+        </div>
+        <hr style="margin: 25px 0; border: none; border-top: 2px solid #e2e8f0;">
+        <h3 style="margin-bottom: 15px; color: #2d3748;">Liste des métiers</h3>
+        <div class="list-grid">
+            ${metiersList || '<p style="text-align:center;color:#718096;">Aucun métier</p>'}
+        </div>
+    `;
+    document.getElementById('modal').style.display = 'block';
+}
+
+function addMetierFromModal() {
+    const name = document.getElementById('newMetierName').value.trim();
+    if (name && !data.metiers.includes(name)) {
+        data.metiers.push(name);
+        updateFilters();
+        save();
+        manageMetiers(); // Rafraîchir la liste
+    } else if (data.metiers.includes(name)) {
+        alert('Ce métier existe déjà !');
+    } else {
+        alert('Veuillez entrer un nom de métier');
+    }
+}
+
+function deleteMetier(metierName) {
+    const countPrincipal = data.inventoryPrincipal.filter(i => i.metier === metierName).length;
+    let countSites = 0;
+    Object.values(data.sites).forEach(site => {
+        countSites += site.filter(i => i.metier === metierName).length;
+    });
+    const total = countPrincipal + countSites;
+    
+    if (confirm(`Supprimer le métier "${metierName}" ?\n${total > 0 ? `${total} article(s) seront remis en "Divers".` : ''}`)) {
+        // Supprimer le métier
+        data.metiers = data.metiers.filter(m => m !== metierName);
+        
+        // Remettre les articles en "Divers"
+        data.inventoryPrincipal.forEach(item => {
+            if (item.metier === metierName) item.metier = 'Divers';
+        });
+        
+        Object.keys(data.sites).forEach(site => {
+            data.sites[site].forEach(item => {
+                if (item.metier === metierName) item.metier = 'Divers';
+            });
+        });
+        
+        // Ajouter "Divers" s'il n'existe pas
+        if (!data.metiers.includes('Divers')) {
+            data.metiers.push('Divers');
+        }
+        
+        updateFilters();
+        save();
+        render();
+        manageMetiers(); // Rafraîchir la liste
+    }
+}
+
+function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+}
+
+let selectedSuggestionIndex = -1;
+
+function handleAutocomplete(input, type) {
+    const value = input.value.toLowerCase();
+    const suggestionsDiv = document.getElementById(`autocomplete${type === 'principal' ? 'Principal' : 'Sites'}`);
+    
+    if (value.length < 1) {
+        suggestionsDiv.classList.remove('show');
+        render();
+        return;
+    }
+    
+    let items = [];
+    
+    if (type === 'principal') {
+        items = data.inventoryPrincipal.filter(item => 
+            item.ref.toLowerCase().includes(value) || 
+            item.designation.toLowerCase().includes(value) ||
+            item.metier.toLowerCase().includes(value)
+        ).slice(0, 8); // Limiter à 8 suggestions
+    } else {
+        Object.keys(data.sites).forEach(site => {
+            data.sites[site].forEach(item => {
+                if (item.ref.toLowerCase().includes(value) || 
+                    item.designation.toLowerCase().includes(value) ||
+                    item.metier.toLowerCase().includes(value)) {
+                    items.push({...item, site});
+                }
+            });
+        });
+        items = items.slice(0, 8);
+    }
+    
+    if (items.length === 0) {
+        suggestionsDiv.classList.remove('show');
+        render();
+        return;
+    }
+    
+    suggestionsDiv.innerHTML = items.map((item, idx) => `
+        <div class="autocomplete-suggestion" onclick="selectSuggestion('${item.ref.replace(/'/g, "\\'")}', '${type}')" data-index="${idx}">
+            <div class="suggestion-ref">${highlightMatch(item.ref, value)}</div>
+            <div class="suggestion-designation">${highlightMatch(item.designation, value)}</div>
+            <span class="suggestion-metier">${item.metier}</span>
+            ${type === 'sites' ? `<span style="float: right; color: #004489; font-size: 0.8em; font-weight: 600;">${item.site}</span>` : ''}
+            ${type === 'principal' ? `<span class="suggestion-stock ${item.stock < item.stockMin ? 'low' : ''}">Stock: ${item.stock}</span>` : ''}
+        </div>
+    `).join('');
+    
+    suggestionsDiv.classList.add('show');
+    selectedSuggestionIndex = -1;
+    
+    // Appeler render pour filtrer aussi
+    render();
+}
+
+function highlightMatch(text, search) {
+    const regex = new RegExp(`(${search})`, 'gi');
+    return text.replace(regex, '<strong style="color: #004489;">$1</strong>');
+}
+
+function selectSuggestion(ref, type) {
+    const inputId = type === 'principal' ? 'searchPrincipal' : 'searchSites';
+    document.getElementById(inputId).value = ref;
+    document.getElementById(`autocomplete${type === 'principal' ? 'Principal' : 'Sites'}`).classList.remove('show');
+    render();
+}
+
+// Fermer les suggestions au clic extérieur
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.autocomplete-container')) {
+        document.querySelectorAll('.autocomplete-suggestions').forEach(s => s.classList.remove('show'));
+    }
+});
+
+// Navigation au clavier dans les suggestions
+document.addEventListener('keydown', function(e) {
+    const activeInput = document.activeElement;
+    if (activeInput.id === 'searchPrincipal' || activeInput.id === 'searchSites') {
+        const type = activeInput.id === 'searchPrincipal' ? 'Principal' : 'Sites';
+        const suggestionsDiv = document.getElementById(`autocomplete${type}`);
+        const suggestions = suggestionsDiv.querySelectorAll('.autocomplete-suggestion');
+        
+        if (suggestions.length > 0 && suggestionsDiv.classList.contains('show')) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                updateSelectedSuggestion(suggestions);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                updateSelectedSuggestion(suggestions);
+            } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+                e.preventDefault();
+                suggestions[selectedSuggestionIndex].click();
+            } else if (e.key === 'Escape') {
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+    }
+});
+
+function updateSelectedSuggestion(suggestions) {
+    suggestions.forEach((s, idx) => {
+        if (idx === selectedSuggestionIndex) {
+            s.classList.add('selected');
+            s.scrollIntoView({ block: 'nearest' });
+        } else {
+            s.classList.remove('selected');
+        }
+    });
+}
+
+// Fonctions interactives du dashboard
+function searchAndGoToItem(ref, tab) {
+    switchTab(tab);
+    setTimeout(() => {
+        const searchInput = document.getElementById(tab === 'principal' ? 'searchPrincipal' : 'searchSites');
+        searchInput.value = ref;
+        searchInput.focus();
+        render();
+        
+        // Scroll vers l'élément
+        const tableBody = document.getElementById(tab === 'principal' ? 'tablePrincipal' : 'tableSites');
+        if (tableBody && tableBody.firstChild) {
+            tableBody.firstChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
+}
+
+function filterByMetierFromDashboard(metier) {
+    switchTab('principal');
+    setTimeout(() => {
+        const metierFilter = document.getElementById('filterMetier');
+        metierFilter.value = metier;
+        render();
+    }, 100);
+}
+
+function showCriticalStocksDetail() {
+    const criticalItems = data.inventoryPrincipal.filter(i => i.stock < i.stockMin);
+    
+    if (criticalItems.length === 0) {
+        alert('✅ Aucun stock critique actuellement !');
+        return;
+    }
+    
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTitle').textContent = '⚠️ Stocks Critiques - Actions Requises';
+    
+    const itemsList = criticalItems
+        .sort((a, b) => (a.stock / a.stockMin) - (b.stock / b.stockMin))
+        .map(item => {
+            const percentage = Math.round((item.stock / item.stockMin) * 100);
+            const urgency = percentage < 30 ? 'critical' : 'warning';
+            return `
+                <div class="list-item" onclick="searchAndGoToItem('${item.ref.replace(/'/g, "\\'")}', 'principal'); closeModal();" style="margin-bottom: 10px; border: 2px solid #e2e8f0;">
+                    <div style="flex: 1;">
+                        <div class="list-item-name">${item.ref} - ${item.designation}</div>
+                        <div style="font-size: 0.85em; color: #718096; margin-top: 5px;">
+                            ${item.metier} • Stock actuel: ${item.stock} • Minimum: ${item.stockMin}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${urgency}" style="width: ${Math.max(percentage, 5)}%"></div>
+                        </div>
+                    </div>
+                    <span class="list-item-badge ${urgency}">${percentage}%</span>
+                </div>
+            `;
+        }).join('');
+    
+    document.getElementById('modalBody').innerHTML = `
+        <p style="color: #e53e3e; font-weight: 600; margin-bottom: 20px;">
+            🚨 ${criticalItems.length} article(s) nécessitent un réapprovisionnement urgent
+        </p>
+        <div style="max-height: 400px; overflow-y: auto;">
+            ${itemsList}
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 10px;">
+            <p style="font-size: 0.9em; color: #718096; margin: 0;">
+                💡 <strong>Astuce :</strong> Cliquez sur un article pour le rechercher dans l'inventaire
+            </p>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+}
+
+// Auto-sync désactivé pour éviter les pertes de données
+// Utilisez le bouton de synchronisation manuel pour synchroniser avec Google Sheets
+// setInterval(load, 30000);
+
+// Chargement initial - vérifier auto-login
+checkAutoLogin();
+    </script>
+</body>
+</html>
